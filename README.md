@@ -1,4 +1,4 @@
-##Predstavljanje stanja problema
+## Predstavljanje stanja problema
 Stanje na tabli predstavljeno je kroz dve liste, na razlicite nacine. Prva lista *states* je oblika *((x-koordinate) (y-koordinate))* gde prva od podlisti predstavlja sve koordinate polja na kojima se nalaze x-figure, a druga, suprotno tome predstavlja sve koordinate na kojima se nalaze o-figure. Lista *vertical-states* sadrzi koordinate iz ugla vertikalnog predstavljanja, svaka koordinata je data u formatu okrenutom u odnosu na prvu listu, a same koordinate su grupisane u dve podslite po istoj analogjji. Pored neophodnih listi se cuva i informacija o dimenzionalnosti samog polja.
 
 Korisnik nakon startovanja igre i biranja moda (koji određuje prvenstvo igre na početku između čoveka i mašine) unosi veličinu tabele za igru, na osnovu čega se formiraju liste odgovarajucih dimenzija. Naime, nakon unosa dimenzija liste se inicijalizuju funkcijama *initial-states* i *initial-states-vertical*.
@@ -15,7 +15,7 @@ Samo kodiranje pruza uvid u strukturu svakog reda polja, atomicni elementi su br
 
 Pri svakom potezu koji se zadaje “koordinatama” trenutne pozicije figure koju pomeramo i koordinatama pozicije na koju želimo pomeriti tu figuru. Za navedenu funkcionalnost zadužena je funkcija make-move koja poziva samu sebe i na taj način održava igru u toku sve dok se manualno ne otkuca komanda “exit” kojom se program napušta, ili jedna od evaluacionih funkcija: *check-winner-state-horizontal*, *check-winner-state-vertical* ili *check-winner-state-diagonal* ne naznači da je jedan od igrača ostvario uslove za pobedu (pet vezanih figura, po vertikali, horizontali ili dijagonali).
 
-##Funkcije i operator promene stanja
+## Funkcije i operator promene stanja
 
 **(make-move xo)**
 Ključna funkcija u programu, kao argument dobija boolean xo koji odredjuje igraca na potezu (true: x false: o) cija je negirana vrednost prosledjena rekurzivno ovoj istoj funkciji nakon uspesno zavrsenog poteza, dok se ne dođe do jednog od gorenavedenih uslova za prekid igre (korisnik prekida igru kucanjem “exit” u terminal, ili je neki od igrača pobedio). Funkcija zahteva od korisnika unos poteza u formi početnih i završnih “koordinata” - ((B 3) (C 3)) na primer. Nakon unosa poteza, poziva se pomoćna funkcija form-move kojom konvertujemo slova u brojeve i vršimo proveru granica i ispravnosti formatiranja. Ukoliko je potez ispravan, funkcija *validate-state* vraca true kao povratnu vrednost jer se potez nalazi u grupi svih mogucih poteza. Potez se primenjuje, dolazi do efekata nad globalnim promeljivama i funkcija make-moe poziva samu sebe zbog kontinualnog i naizmenicnog igranja. Pomocne funkcije *check-winner-state-horizontal*, *check-winner-state-vertical* i *check-winner-state-diagonal* vracaju povratnu vrednost koja potvrdjuje situaciju pobednika, ako ima pobednika igra se prekida i izlazi iz izvorne funkcije.
