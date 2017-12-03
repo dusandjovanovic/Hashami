@@ -41,16 +41,19 @@
 
 (defun make-move (xo)  ; xo true : x | false: o za zaizmenicne poteze
   (format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
-  (progn
   (let* ((input (read)) 
          (current (form-move (car input))) 
          (move (form-move (cadr input))) 
          (player (if xo #\x #\o))
+         (horizontal (states-to-matrix 1 dimension states))
+         (vertical (states-to-matrix 1 dimension states-vertical))
          )
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-     (t (progn 
+     (t (if (or (validate-state current move (generate-states horizontal 1 xo))
+                (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))) 
+          (progn 
           (change-state (car current) (cadr current) (car move) (cadr move) xo)
           (let*
           ((horizontal-coded (states-to-matrix 1 dimension states))
@@ -58,10 +61,10 @@
            ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
             (cond
              ((or (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0)) (progn (print-matrix horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
-             (t (print-matrix horizontal-coded) (make-move (not xo)))
-            )
-          )
-))))))
+             (t (print-matrix horizontal-coded) (make-move (not xo)))))
+           )  
+          (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
+))))
 
 (defun form-move (move)
   (if (and (member (car move) '(A B C D E F G H I J K)) (member (cadr move) '(1 2 3 4 5 6 7 8 9 10 11)))
@@ -82,24 +85,6 @@
     '()
 ))
 
-(defun left-right (horizontal-state value)
-  (cond
-   ((null horizontal-state) nil)
-   ((and (listp (second horizontal-state)) (equalp (car (second horizontal-state)) value)) (list (car horizontal-state) (third horizontal-state)))
-   (t (left-right (cdr horizontal-state) value))
-  )
-)
-
-(defun validate-move (x y new-x new-y horizontal vertical xo)
-  (cond
-   ((and xo (member-if-not (list x y) (car states))) nil)
-   ((and (not xo) (member-if-not (list x y) (cadr states))) nil)
-   ; podeljeno validate-vertical/validate-horizontal
-   ((equalp x new-x) ())
-   ((equalp y new-y) ())
-  )
-)
-
 (defun check-winner-state-horizontal (coded-row rownum xo counter) ; rownum za broj vrste | coded-row (nth rownum-1 horizontal-matrix)
   (cond
    ((null coded-row) nil)
@@ -114,16 +99,30 @@
 (defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
   (cond
    ((null coded-column) nil)
-   ((and xo (<= rownum 2)) nil)
    ((and (not xo) (> rownum (- dimension 2))) nil)
    ((equalp counter 5) t)
-   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (and xo (> rownum 2))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
    ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
    (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
   )
 )
 
-;funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red evaluiramo), seclst (predzadnji element), lst (prethodni element), xo (kog igrača evaluiramo), row - (kodirani red), res (rezultat), izlaz - lista sa u formatu (((trenutna figura - koordinate)((moguca nova pozicija 1) (moguca nova pozicija 2)...))(...))
+(defun validate-state (source destination all-states)
+  (cond
+   ((null all-states) nil)
+   ((and (equalp source (caar all-states)) (member destination (cadar all-states) :test 'equal)) t)
+   (t (validate-state source destination (cdr all-states)))
+  )
+)
+
+(defun generate-states (matrix lvl xo)
+  (cond
+   ((null matrix) nil)
+   (t (append (generate-moves-for-row lvl nil nil (if xo 'x 'o) (car matrix) nil) (generate-states (cdr matrix) (1+ lvl) xo)))
+  )
+)
+
+;funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red evaluiramo), seclst (predzadnji element), lst (prethodni element), xo (kog igra?a evaluiramo), row - (kodirani red), res (rezultat), izlaz - lista sa u formatu (((trenutna figura - koordinate)((moguca nova pozicija 1) (moguca nova pozicija 2)...))(...))
 (defun generate-moves-for-row (lvl seclst lst xo row res)
 
   (let* ((value (encode-element (car row) xo)))
@@ -144,7 +143,7 @@
     )
   )
 
-;pomoćna funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igrača evaluiramo), izlaz - ako je element koordinata igrača koji nas interesuje onda vraćamo tu koordinatu, ako je od protivnika - vraćamo nulu, ako je broj slobodnih mesta - vraćamo ga takvog kakav je
+;pomo?na funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igra?a evaluiramo), izlaz - ako je element koordinata igra?a koji nas interesuje onda vra?amo tu koordinatu, ako je od protivnika - vra?amo nulu, ako je broj slobodnih mesta - vra?amo ga takvog kakav je
 (defun encode-element (el xo)
 
   (cond
