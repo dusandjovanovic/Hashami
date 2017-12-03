@@ -34,3 +34,7 @@ Funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red e
 ...
 (validate-state current move (generate-states horizontal 1 xo)
 (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))`
+
+## Operator promene stanja
+**make-all-states (all-states xo)**
+Funkcija koja kao argumenat ima xo boolean koji odrdjuje igraca na potezu i sve moguce poteze tog igraca u odnosu na trenutno stanje. Svi moguci potezi su generisani gore-opisanom funkijom *generate-states*. Rekurzivnim prolaskom kroz listu i pozivanje fukncije *make-states* za svaki mogucu izvornu poziciju i sve njene odredisne pozicije vrsi se formiranje liste svih mogucih poteza koja je ujedno i povratna vrednost funkcije *make-all-states*.
