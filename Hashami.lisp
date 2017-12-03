@@ -15,14 +15,14 @@
      ((equalp mode 1)
       (progn 
         (form-matrix)
-        (print-matrix (states-to-matrix 1 dimension states))
+        (show-output (states-to-matrix 1 dimension states))
         (make-move t))
      )
      ((equalp mode 2) nil)
      ((equalp mode 3) 
       (progn 
          (form-matrix)
-         (print-matrix (states-to-matrix 1 dimension states))
+         (show-output (states-to-matrix 1 dimension states))
          (make-move t)
       ))
      ((string-equal mode "exit") #+sbcl (sb-ext:quit))
@@ -61,7 +61,7 @@
            ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
             (cond
              ((or (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0)) (progn (print-matrix horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
-             (t (print-matrix horizontal-coded) (make-move (not xo)))))
+             (t (show-output horizontal-coded) (make-move (not xo)))))
            )  
           (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
 ))))
@@ -120,7 +120,7 @@
    ((null possible) nil)
    (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
   )
-  )
+)
 
 (defun reverse-all (to-reverse)
   (cond
@@ -189,7 +189,7 @@
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
-  )
+)
 
 ;pomo?na funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igra?a evaluiramo), izlaz - ako je element koordinata igra?a koji nas interesuje onda vra?amo tu koordinatu, ako je od protivnika - vra?amo nulu, ako je broj slobodnih mesta - vra?amo ga takvog kakav je
 (defun encode-element (el xo)
@@ -200,7 +200,7 @@
                  (t 0)))
     (t el)
     )
-  )
+)
 
 (defun append-moves-for-row (lvl el size prev)
     (list(cons (list lvl (car el)) (list (cond
@@ -208,7 +208,7 @@
                                         (t (loop for x from 1 to size collect (list lvl (cond
                                                                                           ((null prev)(+ (car el) x))
                                                                                           (t (- (car el) x))))))))))
-  )
+)
 
 (defun insert-state (x y rearanged-states)
   (cond
@@ -274,10 +274,25 @@
   (print-matrix(states-to-matrix 1 dim  (initial-states dim)))
 )
 
-(defun print-matrix (mat)
+(defun print-matrix (mat indices)
   (cond
     ((null mat) NIL)
-    (t (print-row (car mat)) (print-matrix (cdr mat)))
+    (t (format t "~a " (car indices)) (print-row (car mat)) (print-matrix (cdr mat) (cdr indices)))
+  )
+)
+
+(defun show-output (matrix)
+  (format t "~%  ") 
+  (show-indices dimension '(1 2 3 4 5 6 7 8 9 10 11))
+  (print-matrix matrix '(A B C D E F G H I J K L))
+)
+
+
+(defun show-indices (ith lst)
+  (cond
+   ((equalp ith 1) (format t " ~a ~%" (car lst)))
+   ((not (zerop ith)) (format t " ~a " (car lst)) (show-indices (1- ith) (cdr lst)))
+   (t nil)
   )
 )
 
