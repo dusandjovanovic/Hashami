@@ -36,5 +36,6 @@ Funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red e
 (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))`
 
 ## Operator promene stanja
-**make-all-states (all-states xo)**
-Funkcija koja kao argumenat ima xo boolean koji odrdjuje igraca na potezu i sve moguce poteze tog igraca u odnosu na trenutno stanje. Svi moguci potezi su generisani gore-opisanom funkijom *generate-states*. Rekurzivnim prolaskom kroz listu i pozivanje fukncije *make-states* za svaki mogucu izvornu poziciju i sve njene odredisne pozicije vrsi se formiranje liste svih mogucih poteza koja je ujedno i povratna vrednost funkcije *make-all-states*.
+**make-all-states (all-states xo invert)**
+Funkcija koja kao argumenat ima xo boolean koji odrdjuje igraca na potezu i sve moguce poteze tog igraca u odnosu na trenutno stanje. Svi moguci potezi su generisani gore-opisanom funkijom *generate-states*. Rekurzivnim prolaskom kroz listu i pozivanje fukncije *make-states* za svaki mogucu izvornu poziciju i sve njene odredisne pozicije vrsi se formiranje liste svih mogucih poteza koja je ujedno i povratna vrednost funkcije *make-all-states*. Parametar invert je boolean koji daje informaciju da li se formiraju stanja koja su dobijena generisanjem iz vertikalne ili horizontalne matrice, u slucaju vertikalne matrice je neophodno okrenuti koordinate pri formiranju svih stanja (true).
+
