@@ -126,6 +126,45 @@
          ))
   )
 )
+;funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red evaluiramo), seclst (predzadnji element), lst (prethodni element), xo (kog igrača evaluiramo), row - (kodirani red), res (rezultat), izlaz - lista sa u formatu (((trenutna figura - koordinate)((moguca nova pozicija 1) (moguca nova pozicija 2)...))(...))
+(defun generate-moves-for-row (lvl seclst lst xo row res)
+
+  (let* ((value (encode-element (car row) xo)))
+    (cond
+      ((and (null seclst) (null lst)) (generate-moves-for-row lvl lst value xo (cdr row) res))
+      ((null row) res)
+;      ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
+      ((atom value) (cond
+                      ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
+                      ((listp lst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl lst value NIL))))
+                      ((zerop lst)(cond
+                                    ((and (not(null seclst)) (listp seclst))(generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T))))
+                                    (t (generate-moves-for-row lvl lst value xo (cdr row) res))))
+                      ))
+      ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T))))
+       (t (generate-moves-for-row lvl lst value xo (cdr row) res))
+       )
+    )
+  )
+
+;pomoćna funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igrača evaluiramo), izlaz - ako je element koordinata igrača koji nas interesuje onda vraćamo tu koordinatu, ako je od protivnika - vraćamo nulu, ako je broj slobodnih mesta - vraćamo ga takvog kakav je
+(defun encode-element (el xo)
+
+  (cond
+    ((listp el)(cond
+                 ((equalp (cadr el) xo) el)
+                 (t 0)))
+    (t el)
+    )
+  )
+
+(defun append-moves-for-row (lvl el size prev)
+    (list(cons (list lvl (car el)) (list (cond
+                                        ((zerop size) (list lvl (+ (car el) 2)))
+                                        (t (loop for x from 1 to size collect (list lvl (cond
+                                                                                          ((null prev)(+ (car el) x))
+                                                                                          (t (- (car el) x))))))))))
+  )
 
 (defun initial-row (row column) 
   (cond
