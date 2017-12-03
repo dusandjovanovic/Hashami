@@ -1,4 +1,4 @@
-(setq dimension 0)
+﻿(setq dimension 0)
 (setq states nil)
 (setq states-vertical nil)
 
@@ -46,20 +46,22 @@
          (current (form-move (car input))) 
          (move (form-move (cadr input))) 
          (player (if xo #\x #\o))
-         (horizontal-coded (states-to-matrix 1 dimension states))
-         (vertical-coded (states-to-matrix 1 dimension states-vertical))
-         ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..)
          )
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
      (t (progn 
           (change-state (car current) (cadr current) (car move) (cadr move) xo)
-          (print-matrix (states-to-matrix 1 dimension states))
-          (make-move (not xo))
-    ))
-    )
-)))
+          (let*
+          ((horizontal-coded (states-to-matrix 1 dimension states))
+           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+           ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
+            (cond
+             ((or (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0)) (progn (print-matrix horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+             (t (print-matrix horizontal-coded) (make-move (not xo)))
+            )
+          )
+))))))
 
 (defun form-move (move)
   (if (and (member (car move) '(A B C D E F G H I J K)) (member (cadr move) '(1 2 3 4 5 6 7 8 9 10 11)))
@@ -98,34 +100,29 @@
   )
 )
 
-(defun insert-state (x y rearanged-states)
+(defun check-winner-state-horizontal (coded-row rownum xo counter) ; rownum za broj vrste | coded-row (nth rownum-1 horizontal-matrix)
   (cond
-   ((null rearanged-states) (list (list x y)))
-   ((or (and (equalp (caar rearanged-states) x) (< y (cadar rearanged-states))) (< x (caar rearanged-states))) (cons (list x y) rearanged-states))
-   (t (cons (car rearanged-states) (insert-state x y (cdr rearanged-states))))
+   ((null coded-row) nil)
+   ((and xo (<= rownum 2)) nil)
+   ((and (not xo) (> rownum (- dimension 2))) nil)
+   ((equalp counter 5) t)
+   ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) (check-winner-state-horizontal (cdr coded-row) rownum xo (1+ counter)))
+   (t (check-winner-state-horizontal (cdr coded-row) rownum xo 0))
   )
 )
 
-(defun remove-state (x y changed-states)
+(defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
   (cond
-   ((null changed-states) nil)
-   ((and (equalp (caar changed-states) x) (equalp y (cadar changed-states))) (cdr changed-states))
-   (t (cons (car changed-states) (remove-state x y (cdr changed-states))))
+   ((null coded-column) nil)
+   ((and xo (<= rownum 2)) nil)
+   ((and (not xo) (> rownum (- dimension 2))) nil)
+   ((equalp counter 5) t)
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
+   ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
+   (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
   )
 )
 
-(defun change-state (x y x-new y-new xo)
-  (cond
-   (xo (progn 
-         (setq states-vertical (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical)))
-         (setq states (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states)))
-         ))
-   ((not xo) (progn
-         (setq states-vertical (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical)))))
-         (setq states (list (car states) (insert-state x-new y-new (remove-state x y (cadr states)))))      
-         ))
-  )
-)
 ;funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red evaluiramo), seclst (predzadnji element), lst (prethodni element), xo (kog igrača evaluiramo), row - (kodirani red), res (rezultat), izlaz - lista sa u formatu (((trenutna figura - koordinate)((moguca nova pozicija 1) (moguca nova pozicija 2)...))(...))
 (defun generate-moves-for-row (lvl seclst lst xo row res)
 
@@ -165,6 +162,35 @@
                                                                                           ((null prev)(+ (car el) x))
                                                                                           (t (- (car el) x))))))))))
   )
+
+(defun insert-state (x y rearanged-states)
+  (cond
+   ((null rearanged-states) (list (list x y)))
+   ((or (and (equalp (caar rearanged-states) x) (< y (cadar rearanged-states))) (< x (caar rearanged-states))) (cons (list x y) rearanged-states))
+   (t (cons (car rearanged-states) (insert-state x y (cdr rearanged-states))))
+  )
+)
+
+(defun remove-state (x y changed-states)
+  (cond
+   ((null changed-states) nil)
+   ((and (equalp (caar changed-states) x) (equalp y (cadar changed-states))) (cdr changed-states))
+   (t (cons (car changed-states) (remove-state x y (cdr changed-states))))
+  )
+)
+
+(defun change-state (x y x-new y-new xo)
+  (cond
+   (xo (progn 
+         (setq states-vertical (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical)))
+         (setq states (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states)))
+         ))
+   ((not xo) (progn
+         (setq states-vertical (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical)))))
+         (setq states (list (car states) (insert-state x-new y-new (remove-state x y (cadr states)))))      
+         ))
+  )
+)
 
 (defun initial-row (row column) 
   (cond
@@ -239,7 +265,6 @@
     (t (let* ((value (encode-row lvl dim (car states) (cadr states) nil 0))) (append (list (car value)) (states-to-matrix (+ lvl 1) dim (cadr value)))))
     )
 )
-
 
 (defun encode-row (lvl dim fst sec res sum)
   (cond
