@@ -107,6 +107,53 @@
   )
 )
 
+(defun make-all-states (all-states xo invert)
+  (cond
+   ((null all-states) nil)
+   ((not (null (cadar all-states))) (append (make-states (caaar all-states) (cadaar all-states) (cadar all-states) xo invert) (make-all-states (cdr all-states) xo invert)))
+   (t (make-all-states (cdr all-states) xo invert))
+  )
+)
+
+(defun make-states (x y possible xo invert)
+  (cond
+   ((null possible) nil)
+   (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
+  )
+  )
+
+(defun reverse-all (to-reverse)
+  (cond
+   ((null to-reverse) nil)
+   (cond (reverse (car to-reverse)) (reverse-all (cdr to-reverse)))
+  )
+)
+
+(defun make-state (x y x-new y-new xo invert)
+  (cond
+   ((and (not invert) xo) (progn 
+         (list
+         (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states))
+         (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical))
+         )))
+   ((and (not invert) (not xo)) (progn
+         (list 
+         (list (car states) (insert-state x-new y-new (remove-state x y (cadr states))))
+         (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical))))  
+         )))
+   ((and invert xo) (progn 
+         (list 
+         (list (insert-state y-new x-new (remove-state y x (car states))) (cadr states))
+         (list (insert-state x-new y-new (remove-state x y (car states-vertical))) (cadr states-vertical))
+         )))
+   ((and invert (not xo)) (progn
+         (list 
+         (list (car states) (insert-state y-new x-new (remove-state y x (cadr states))))  
+         (list (car states-vertical) (insert-state x-new y-new (remove-state x y (cadr states-vertical))))  
+         )))
+  )
+)
+
 (defun validate-state (source destination all-states)
   (cond
    ((null all-states) nil)
@@ -114,6 +161,7 @@
    (t (validate-state source destination (cdr all-states)))
   )
 )
+
 
 (defun generate-states (matrix lvl xo)
   (cond
@@ -230,12 +278,8 @@
   (cond
     ((null mat) NIL)
     (t (print-row (car mat)) (print-matrix (cdr mat)))
-    )
+  )
 )
-
-; (setq matrix (initial-states 10))
-; (print-matrix(states-to-matrix 1 10 matrix))
-
 
 ;; funkcija za stampanje reda matrice, prosledjenog u formi liste atoma, gde
 ;; pozitivna vrednost oznacava prazna polja a sama velicina vrednosti
