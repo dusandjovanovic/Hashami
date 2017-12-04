@@ -121,7 +121,83 @@
    ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
    (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
   )
-)
+  )
+
+(defun check-winner-state-diagonal (lvl encoded-list xo res lr)
+
+  (cond
+    ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
+                               (t NIL)))
+    (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl (car encoded-list) xo res lr) lr))
+    )
+  )
+
+(defun longest-sublist (all longest)
+  (cond
+    ((null all) longest)
+    ((> (length (car all)) longest) (longest-sublist (cdr all) (length (car all))))
+    (t (longest-sublist (cdr all) longest))
+    )
+  )
+
+(defun remove-atoms (lvl list res)
+  (cond
+    ((null list) (reverse res))
+    ((and (atom (caar list))(equalp (caar list) lvl) ) (remove-atoms lvl (cdr list) res))
+    (t (remove-atoms lvl (cdr list) (cond
+                                      ((null res) (list (car list)))
+                                      (t(cons (car list) res )))))
+    )
+  )
+
+(defun check-row-for-diagonal (lvl row xo current lr)
+  (cond
+    ((null row) (remove-atoms (- lvl 1) current NIL))
+    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr) lr))
+     (t (check-row-for-diagonal lvl (cdr row) xo current lr))
+     )
+    )
+  )
+
+(defun check-if-element-diagonal (element current res lr)
+
+  (cond
+    ((null current)
+         (cond
+           ((null res) (list element))
+           (t (append res (list element)))
+           ))
+    (t (let* ((value (car current)))
+         (cond
+           ((equalp value (check-if-appends element value lr)) (check-if-element-diagonal element (cdr current) (cond
+                                                                                                               ((null res) (list (car current)))
+                                                                                                               (t(append res (list(car current))))) lr))
+           (t  (append res (list(check-if-appends element value lr)) (cdr current)) )
+           )
+         )
+       )
+    )
+  )
+
+(defun check-if-appends (element element-or-atom lr)
+
+  (let*
+      ((value (car (last element-or-atom))))
+    (cond
+      ((listp value)(cond
+                      ( (equalp (cadr element) (+ (cadr value) lr)) (append element-or-atom (list element)))
+                      (t element-or-atom)))
+
+      ( (equalp (cadr element) (+ (cadr element-or-atom) lr)) (list element-or-atom element))
+      (t element-or-atom)
+      )
+
+    )
+  )
+
+
+
+
 
 ;funkcija za generisanje poteza u jednom redu, ulazni parametri - lvl (koji red evaluiramo), seclst (predzadnji element), lst (prethodni element), xo (kog igrača evaluiramo), row - (kodirani red), res (rezultat), izlaz - lista sa u formatu (((trenutna figura - koordinate)((moguca nova pozicija 1) (moguca nova pozicija 2)...))(...))
 (defun generate-moves-for-row (lvl seclst lst xo row res)
