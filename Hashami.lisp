@@ -181,10 +181,10 @@
       ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
                                                                     ((equalp lr -1) T)
                                                                     (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
-element) (+ (cadr element-or-atom) lr)) (list element-or-atom element)
-  (t element-or-atom)
+      (t element-or-atom)
+      )
+    )
   )
-
 
 (defun make-all-states (all-states xo invert)
   (cond
