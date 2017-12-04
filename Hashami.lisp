@@ -1,4 +1,4 @@
-﻿(defvar dimension 0)
+(defvar dimension 0)
 (defvar states nil)
 (defvar states-vertical nil)
 
@@ -60,7 +60,9 @@
            (vertical-coded (states-to-matrix 1 dimension states-vertical)))
            ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
             (cond
+
               ((or (and xo (< (length (cadr states)) 4)) (and (not xo) (< (length (car states)) 4)) (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil -1) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil 1)) (progn (show-output horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+
              (t (show-output horizontal-coded) (make-move (not xo)))))
            )  
           (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
@@ -108,6 +110,7 @@
 )
 
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
+
     (cond
       ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
                                  (t NIL)))
@@ -117,6 +120,7 @@
                                                                                           (t (car encoded-list))) xo res lr) lr))
       )
     )
+
 
 (defun longest-sublist (all longest)
   (cond
@@ -171,6 +175,7 @@
       ((value (car (last element-or-atom))))
     (cond
       ((listp value)(cond
+
                       ((and (equalp (cadr element) (+ (cadr value) lr)) (cond ((equalp lr -1) T)
                                                                               (t (equalp(car element) (+ (car value) lr))))) (append element-or-atom (list element)))
                       (t element-or-atom)))
@@ -178,6 +183,8 @@
       ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
                                                                     ((equalp lr -1) T)
                                                                     (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
+element) (+ (cadr element-or-atom) lr)) (list element-or-atom element))
+
       (t element-or-atom)
       )
 
