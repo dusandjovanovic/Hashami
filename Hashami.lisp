@@ -123,11 +123,13 @@
   )
   )
 
+(defun check-diagonal-)
+
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
 
   (cond
     ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
-                               (t NIL)))
+                                             (t NIL)))
     (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl (car encoded-list) xo res lr) lr))
     )
   )
@@ -185,10 +187,13 @@
       ((value (car (last element-or-atom))))
     (cond
       ((listp value)(cond
-                      ( (equalp (cadr element) (+ (cadr value) lr)) (append element-or-atom (list element)))
+                      ((and (equalp (cadr element) (+ (cadr value) lr)) (cond ((equalp lr -1) T)
+                                                                              (t (equalp(car element) (+ (car value) lr))))) (append element-or-atom (list element)))
                       (t element-or-atom)))
 
-      ( (equalp (cadr element) (+ (cadr element-or-atom) lr)) (list element-or-atom element))
+      ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
+                                                                    ((equalp lr -1) T)
+                                                                    (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
       (t element-or-atom)
       )
 
