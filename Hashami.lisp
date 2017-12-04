@@ -175,21 +175,17 @@
       ((value (car (last element-or-atom))))
     (cond
       ((listp value)(cond
-
                       ((and (equalp (cadr element) (+ (cadr value) lr)) (cond ((equalp lr -1) T)
                                                                               (t (equalp(car element) (+ (car value) lr))))) (append element-or-atom (list element)))
                       (t element-or-atom)))
-
       ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
                                                                     ((equalp lr -1) T)
                                                                     (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
-element) (+ (cadr element-or-atom) lr)) (list element-or-atom element))
-
-      (t element-or-atom)
-      )
-
-    )
+element) (+ (cadr element-or-atom) lr)) (list element-or-atom element)
+  (t element-or-atom)
   )
+
+
 (defun make-all-states (all-states xo invert)
   (cond
    ((null all-states) nil)
