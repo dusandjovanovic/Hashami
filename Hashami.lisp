@@ -51,8 +51,8 @@
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-     (t (if (or (validate-state current move (generate-states horizontal 1 xo))
-                (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))) 
+     (t (if (or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
+                (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))) 
           (progn 
           (change-state (car current) (cadr current) (car move) (cadr move) xo)
           (let*
@@ -107,6 +107,18 @@
   )
 )
 
+
+
+
+
+(defun check-winner-state-diagonal ()
+
+)
+
+
+
+
+
 (defun make-all-states (all-states xo invert)
   (cond
    ((null all-states) nil)
@@ -157,7 +169,7 @@
 (defun validate-state (source destination all-states)
   (cond
    ((null all-states) nil)
-   ((and (equalp source (caar all-states)) (member destination (cadar all-states) :test 'equal)) t)
+   ((and (equalp source (caar all-states)) (or (member destination (cadar all-states) :test 'equal) (equal destination (cadar all-states)))) t)
    (t (validate-state source destination (cdr all-states)))
   )
 )
