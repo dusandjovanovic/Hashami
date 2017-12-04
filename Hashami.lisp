@@ -51,8 +51,8 @@
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-     (t (if (or (validate-state current move (generate-states horizontal 1 xo))
-                (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))) 
+     (t (if (or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
+                (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))) 
           (progn 
           (change-state (car current) (cadr current) (car move) (cadr move) xo)
           (let*
@@ -60,7 +60,7 @@
            (vertical-coded (states-to-matrix 1 dimension states-vertical)))
            ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
             (cond
-             ((or (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0)) (progn (print-matrix horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+             ((or (and xo (< (length (cadr states)) 4)) (and (not xo) (< (length (car states)) 4)) (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil -1)) (progn (show-output horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
              (t (show-output horizontal-coded) (make-move (not xo)))))
            )  
           (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
@@ -107,6 +107,77 @@
   )
 )
 
+(defun check-winner-state-diagonal (lvl encoded-list xo res lr)
+
+  (cond
+    ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
+                               (t NIL)))
+    (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl (car encoded-list) xo res lr) lr))
+    )
+  )
+
+(defun longest-sublist (all longest)
+  (cond
+    ((null all) longest)
+    ((> (length (car all)) longest) (longest-sublist (cdr all) (length (car all))))
+    (t (longest-sublist (cdr all) longest))
+    )
+  )
+
+(defun remove-atoms (lvl list res)
+  (cond
+    ((null list) (reverse res))
+    ((and (atom (caar list))(equalp (caar list) lvl) ) (remove-atoms lvl (cdr list) res))
+    (t (remove-atoms lvl (cdr list) (cond
+                                      ((null res) (list (car list)))
+                                      (t(cons (car list) res )))))
+    )
+  )
+
+(defun check-row-for-diagonal (lvl row xo current lr)
+  (cond
+    ((null row) (remove-atoms (- lvl 1) current NIL))
+    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr) lr))
+     (t (check-row-for-diagonal lvl (cdr row) xo current lr))
+     )
+    )
+
+
+(defun check-if-element-diagonal (element current res lr)
+
+  (cond
+    ((null current)
+         (cond
+           ((null res) (list element))
+           (t (append res (list element)))
+           ))
+    (t (let* ((value (car current)))
+         (cond
+           ((equalp value (check-if-appends element value lr)) (check-if-element-diagonal element (cdr current) (cond
+                                                                                                               ((null res) (list (car current)))
+                                                                                                               (t(append res (list(car current))))) lr))
+           (t  (append res (list(check-if-appends element value lr)) (cdr current)) )
+           )
+         )
+       )
+    )
+  )
+
+(defun check-if-appends (element element-or-atom lr)
+
+  (let*
+      ((value (car (last element-or-atom))))
+    (cond
+      ((listp value)(cond
+                      ( (equalp (cadr element) (+ (cadr value) lr)) (append element-or-atom (list element)))
+                      (t element-or-atom)))
+
+      ( (equalp (cadr element) (+ (cadr element-or-atom) lr)) (list element-or-atom element))
+      (t element-or-atom)
+      )
+
+    )
+  )
 (defun make-all-states (all-states xo invert)
   (cond
    ((null all-states) nil)
@@ -119,13 +190,6 @@
   (cond
    ((null possible) nil)
    (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
-  )
-)
-
-(defun reverse-all (to-reverse)
-  (cond
-   ((null to-reverse) nil)
-   (cond (reverse (car to-reverse)) (reverse-all (cdr to-reverse)))
   )
 )
 
@@ -157,7 +221,7 @@
 (defun validate-state (source destination all-states)
   (cond
    ((null all-states) nil)
-   ((and (equalp source (caar all-states)) (member destination (cadar all-states) :test 'equal)) t)
+   ((and (equalp source (caar all-states)) (or (member destination (cadar all-states) :test 'equal) (equal destination (cadar all-states)))) t)
    (t (validate-state source destination (cdr all-states)))
   )
 )
