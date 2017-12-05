@@ -7,9 +7,9 @@ S obzirom da vid predstavljanja koji smo izabrali nije dovoljan za prikaz i eval
 
 **Primer kodiranja:**
 
-(rownum: 0) - - x - - o o - - - - x
+`(rownum: 0) - - x - - o o - - - - x`
 
-(coded: 0) 2 (3 x) 2 (6 o) (7 o) 4 (12 x)
+`(coded: 0) 2 (3 x) 2 (6 o) (7 o) 4 (12 x)`
 
 Samo kodiranje pruža uvid u strukturu svakog reda polja, atomični elementi su brojnih vrednosti i govore o broju slobodnih pozicija. Sa druge strane, neatomični elementi označavaju prisutnost x/o elemenata i sadrže informaciju o rednom broju u redu. Ovakav vid predstavljanja je pogodan za samo prikazivanje celokupnog polja, odnosno table, i pruža dodatne informacije koje su korisne prilikom različitih evaluacija i formiranja heuristike. Kodiranje se vrši na nivou vrsta ili kolona, a celokupne kodirane matrice se koriste u algoritmima prilikom obrada i procena stanja. Jedna od ključnih funkcija ***states-to-matrix*** upravo ima tu ulogu, da na osnovu prosledjenog stanja generiše kodiranu matricu koja oslikava celu tablu. Ako se ovoj funkciji prosledi kao argumenat skup stanja sa horizontalnim koordinatama (states) dobija se matrica kodiranih vrsta, a u suprotnom ako je prosledjeni argumenat skup stanja sa vertikalnim koordinatama (states-vertical) dobija se matrica kodiranih kolona.
 
