@@ -85,7 +85,91 @@
        (t '())
       )
     '()
-))
+    ))
+
+; parametri su states/states-vertical vraca listu ((new states) (new states-vertical)) :: integrisano u generator stanja (make-all-states)
+(defun check-sandwich (states-ptr states-vertical-ptr move xo)
+  (let* ( 
+         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) (car move) xo))
+         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) (cadr move) xo))
+        )
+     (list
+      (list
+       (remove-from-states (remove-from-states (car states-ptr) to-delete-horizontal) (inverse-all to-delete-vertical))
+       (remove-from-states (remove-from-states (cadr states-ptr) to-delete-horizontal) (inverse-all to-delete-vertical))
+      )
+      (list
+       (remove-from-states (remove-from-states (car states-vertical-ptr) to-delete-vertical) (inverse-all to-delete-horizontal))
+       (remove-from-states (remove-from-states (cadr states-vertical-ptr) to-delete-vertical) (inverse-all to-delete-horizontal))
+      )
+     )    
+   )
+)
+
+(defun extract-row-column (states-ptr num)
+  (cond
+   ((null states-ptr) nil)
+   ((< (caar states-ptr) num) (extract-row-column (cdr states-ptr) num))
+   ((> (caar states-ptr) num) nil)
+   (t (cons (car states-ptr) (extract-row-column (cdr states-ptr) num)))
+  )
+)
+
+; sledece dve funkcije vracaju elemente koji treba da budu obrisani (x y)
+(defun check-row-sandwich (states-ptr row xo) 
+  (let* 
+      (
+       (player (if xo (car states-ptr) (cadr states-ptr)))
+       (opponent (if xo (cadr states-ptr) (car states-ptr)))
+      ) 
+    (to-remove player opponent)
+  )
+)
+
+(defun check-column-sandwich (states-vertical-ptr column xo) 
+  (let* 
+      (
+       (player (if xo (car states-vertical-ptr) (cadr states-vertical-ptr)))
+       (opponent (if xo (cadr states-vertical-ptr) (car states-vertical-ptr)))
+      ) 
+    (to-remove player opponent)
+  )
+)
+
+(defun to-remove (player opponent)
+  (let* 
+      (
+       (left-bound (car player))
+       (right-bound (nth 1 player))
+      ) 
+    (cond
+     ((null player) nil)
+     (t (append (in-between left-bound right-bound (list (car left-bound) (1+ (cadr left-bound))) nil opponent) (to-remove (cdr player) opponent)))
+    )
+  )
+)
+
+(defun in-between (left-bound right-bound current sublist opponent)
+  (cond
+   ((equalp current right-bound) sublist)
+   ((not (member current opponent :test 'equal)) nil)
+   (t (in-between left-bound right-bound (list (car current) (1+ (cadr current))) (cons current sublist) opponent))
+  )
+)
+
+(defun remove-from-states (states-ptr elto-remove) 
+  (cond
+   ((null elto-remove) states-ptr)
+   (t (remove-from-states (remove (car elto-remove) states-ptr :test 'equal) (cdr elto-remove)))
+  )
+)
+
+(defun inverse-all (uninversed)
+  (cond
+   ((null uninversed) nil)
+   (t (cons (append (cdar uninversed) (list (caar uninversed))) (inverse-all (cdr uninversed))))
+  )
+)
 
 (defun check-winner-state-horizontal (coded-row rownum xo counter) ; rownum za broj vrste | coded-row (nth rownum-1 horizontal-matrix)
   (cond
@@ -186,6 +270,13 @@
     )
   )
 
+(defun merge-all-states (horizontal-matrix vertical-matrix xo)
+  (append
+   (make-all-states (generate-states horizontal-matrix 1 xo) xo nil)
+   (make-all-states (generate-states vertical-matrix 1 xo) xo t)
+  )
+)
+
 (defun make-all-states (all-states xo invert)
   (cond
    ((null all-states) nil)
@@ -197,6 +288,7 @@
 (defun make-states (x y possible xo invert)
   (cond
    ((null possible) nil)
+   ((atom (car possible)) (make-state x y (car possible) (cadr possible) xo invert))
    (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
   )
 )
@@ -204,24 +296,32 @@
 (defun make-state (x y x-new y-new xo invert)
   (cond
    ((and (not invert) xo) (progn 
-         (list
+         (check-sandwich
          (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states))
          (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical))
+         (list x-new y-new)
+         t
          )))
    ((and (not invert) (not xo)) (progn
-         (list 
+         (check-sandwich 
          (list (car states) (insert-state x-new y-new (remove-state x y (cadr states))))
-         (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical))))  
+         (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical))))
+         (list x-new y-new)
+         nil
          )))
    ((and invert xo) (progn 
-         (list 
+         (check-sandwich 
          (list (insert-state y-new x-new (remove-state y x (car states))) (cadr states))
          (list (insert-state x-new y-new (remove-state x y (car states-vertical))) (cadr states-vertical))
+         (list y-new x-new)
+         t
          )))
    ((and invert (not xo)) (progn
-         (list 
+         (check-sandwich 
          (list (car states) (insert-state y-new x-new (remove-state y x (cadr states))))  
-         (list (car states-vertical) (insert-state x-new y-new (remove-state x y (cadr states-vertical))))  
+         (list (car states-vertical) (insert-state x-new y-new (remove-state x y (cadr states-vertical))))
+         (list y-new x-new)
+         nil
          )))
   )
 )
@@ -303,10 +403,22 @@
    (xo (progn 
          (setq states-vertical (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical)))
          (setq states (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states)))
+         (let* ((new-state (check-sandwich states states-vertical (list x-new y-new) t)))
+           (progn
+             (setq states (car new-state))
+             (setq states-vertical (cadr new-state))
+           )
+         )
          ))
    ((not xo) (progn
          (setq states-vertical (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical)))))
-         (setq states (list (car states) (insert-state x-new y-new (remove-state x y (cadr states)))))      
+         (setq states (list (car states) (insert-state x-new y-new (remove-state x y (cadr states)))))
+         (let* ((new-state (check-sandwich states states-vertical (list x-new y-new) nil)))
+           (progn
+             (setq states (car new-state))
+             (setq states-vertical (cadr new-state))
+           )
+         )
          ))
   )
 )
