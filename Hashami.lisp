@@ -272,41 +272,43 @@
 
 ;; implementiranje alfa beta algoritma
 
-(defun max-value (state alpha beta depth xo)
+(defun max-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (random 150))
+    ((zerop depth) (list (random 150)))
     (t (let
            ((quit-flag NIL))
          (progn
-           (loop for x in (merge-all-states (states-to-matrix 0 dimension (car state)) (states-to-matrix 0 dimension (cadr state)) xo ) until quit-flag
+           (loop for x in (merge-all-states (states-to-matrix 0 dimension (car state-par)) (states-to-matrix 0 dimension (cadr state-par)) xo ) until quit-flag
                  do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (setf alpha new-alpha)))
-                    (when (>= alpha beta) (setq quit-flag T))
-                 )
+                      (if (< (car alpha) (car new-alpha)) (setf alpha (cons (car new-alpha)  x)))
+                    (when (>= (car alpha) (car beta)) (setq quit-flag T))
+                 ))
            (cond
              ((null quit-flag) alpha)
              (t beta)
-             ))))
+             )))
     )
-  )i
+    )
+  )
 
-(defun min-value (state alpha beta depth xo)
+(defun min-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (random 150))
+    ((zerop depth) (list (random 150)))
     (t (let
         ((quit-flag NIL))
       (progn
-      (loop for x in (merge-all-states (states-to-matrix 0 dimension (car state)) (states-to-matrix 0 dimension (cadr state)) xo ) until quit-flag
+      (loop for x in (merge-all-states (states-to-matrix 0 dimension (car state-par)) (states-to-matrix 0 dimension (cadr state-par)) xo ) until quit-flag
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
-                 (if (> beta new-beta) (setf beta new-beta)))
-               (when (>= alpha beta) (setq quit-flag T))
-            )
+                 (if (> (car beta) (car new-beta)) (setf beta (cons (car new-beta)  x)))
+               (when (>= (car alpha)(car beta)) (setq quit-flag T))
+            ))
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        ))))
+        )))
+    )
     )
   )
 
