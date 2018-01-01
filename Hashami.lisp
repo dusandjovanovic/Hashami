@@ -289,12 +289,8 @@
              (t beta)
              )))
     )
-<<<<<<< HEAD
-)
-=======
     )
   )
->>>>>>> 4c774556ced7a14a1c777adb9d3b85016f8cbfa0
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
@@ -314,7 +310,7 @@
         )))
     )
     )
-)
+  )
 
 (defun heuristic-value (state)
 (random 100)
