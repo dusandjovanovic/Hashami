@@ -289,7 +289,7 @@
              (t beta)
              ))))
     )
-  )i
+)
 
 (defun min-value (state alpha beta depth xo)
   (cond
@@ -308,7 +308,7 @@
         (t alpha)
         ))))
     )
-  )
+)
 
 (defun heuristic-value (state)
 (random 100)
