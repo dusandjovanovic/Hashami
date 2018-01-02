@@ -36,8 +36,23 @@ Funkcija za generisanje poteza u jednom redu, ulazni parametri su lvl (koji red 
 (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))`
 
 ## Operator promene stanja
-**make-all-states (all-states xo invert)**
+
+**merge-all-states(horizontal-matrix vertical-matrix states-h states-v xo)**
+Funkcija koja objedinjuje sva moguća stanja u odnosu na prosledjeno stanje u jednu listu, odnosno **operator stanja**. Argumenti su kodirane matrice vertikalnog i horizontalnog pogleda, kao i kopije trenutnog stanja, odnosno stanja za koje se traže si mogući potezi, kao i boolean koji govori koji je igrač na potezu. Ova funkcija vrši i objedinjuje rezultate dva različita poziva funkcije make-all-states čime su pokrieni svi potezi u vertikalnom i horizontalnom smeru, za svaku figuru ponaosob. Potezi u horizontalnom smeru (levo-desno) se pribavljaju iz horizontalne matrice, a potezi u vertikalnom smeru (gore-dole) se pribavljaju iz vertikalne matrice. Za svaki smer postoji poseban poziv funkije make-all-states.
+
+**make-all-states (states-h states-v all-states xo invert)**
 Funkcija koja za argumente ima xo boolean koji odrdjuje igrača na potezu i sve moguće poteze tog igrača u odnosu na trenutno stanje. Svi mogući potezi su formirani istom analogijom kao u prethodno opisanom slučaju. Koriščenjem funkcije *generate-states* koja posebno razmatra kodiranu horizontalnu i vertikalnu matricu, a zatim kombinovanjem svih mogućih poteza sa dva odvojena poziva funkcije *make-all-states* za horizontalno i vertikalno kodiranje uz različitu vrednost invert argumenta. Rekurzivnim prolaskom kroz listu i pozivanje fukncije *make-states* za svaku moguću izvornu poziciju i sve njene validne odredišne pozicije vrši se formiranje liste svih mogućih poteza koja je ujedno i povratna vrednost funkcije *make-all-states*. Parametar invert je boolean koji daje informaciju da li se formiraju stanja koja su dobijena generisanjem iz vertikalne ili horizontalne matrice, u slučaju vertikalne matrice (mirrored) je neophodno okrenuti koordinate pri formiranju svih stanja u povratku iz rekurzije.
 
 ## Modularnost | Blackbox struktuiranost
 Sve funkcije su nezavisne i mogu da se koriste u sprezi sa drugim funkcijama ne uzimajući u obzir način i logiku implementacije. Nivo apstrakcije ključnih funkcija je na visokom nivou i one se pritom oslanjaju na pomoćne funkcije nižih nivoa implementacije koje zapravo rešavaju probleme i imaju jasno definisane ulazne argumente. Pri planiranju implementacije funkcija nižeg nivoa uzeta je u obzir struktura prenosa podataka sa ciljem maksimizovanja reupotrebljivosti navedenih funkcija u implementaciji što više funkcija višeg niva. Povratne vrednosti ključnih funkcija su jasno definisanih i konkretnih formata što znatno olakšava kasniju upotrebu; na primer u formiranju heuristike.
+
+
+## Min-max sa Alpha-beta odsecanjem
+
+Algoritam je realizovan kroz funkcije:
+
+`max-value (state-par alpha beta depth xo)`
+
+`min-value (state-par alpha beta depth xo)`
+
+Funkcija heuristike *heuristic-value (state)* će biti naknadno dodata algoritmu.

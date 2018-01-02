@@ -8,19 +8,22 @@
   (format t "~% [2] Racunar-covek :: x o")
   (format t "~% [3] Covek-covek :: x o")
   (format t "~% [exit] Izlaz ~%")
-  
-  (let 
+
+  (let
    ((mode (read)))
     (cond
      ((equalp mode 1)
-      (progn 
+      (progn
         (form-matrix)
-        (show-output (states-to-matrix 1 dimension states))
-        (make-move t))
+        (make-move-ai t nil))
      )
-     ((equalp mode 2) nil)
-     ((equalp mode 3) 
-      (progn 
+     ((equalp mode 2) 
+       (progn
+        (form-matrix)
+        (make-move-ai t t))
+     )
+     ((equalp mode 3)
+      (progn
          (form-matrix)
          (show-output (states-to-matrix 1 dimension states))
          (make-move t)
@@ -33,7 +36,7 @@
   (format t "~% Unesite dimenziju table za Hashami igru, dimenzija treba da bude u opsegu 9-11~%")
   (setq dimension (read))
   (cond
-   ((< dimension 9) (format t "~% Dimenzija table je premala") (form-matrix))
+   ((< dimension 5) (format t "~% Dimenzija table je premala") (form-matrix))
    ((> dimension 11) (format t "~% Dimenzija table je prevelika") (form-matrix))
    (t (progn (setq states-vertical (initial-states-vertical dimension)) (setq states (initial-states dimension))))
   )
@@ -41,9 +44,9 @@
 
 (defun make-move (xo)  ; xo true : x | false: o za zaizmenicne poteze
   (format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
-  (let* ((input (read)) 
-         (current (form-move (car input))) 
-         (move (form-move (cadr input))) 
+  (let* ((input (read))
+         (current (form-move (car input)))
+         (move (form-move (cadr input)))
          (player (if xo #\x #\o))
          (horizontal (states-to-matrix 1 dimension states))
          (vertical (states-to-matrix 1 dimension states-vertical))
@@ -51,26 +54,89 @@
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-     (t (if (or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
-                (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo)))) 
-          (progn 
-          (change-state (car current) (cadr current) (car move) (cadr move) xo)
-          (let*
-          ((horizontal-coded (states-to-matrix 1 dimension states))
-           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-           ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))    
-            (cond
+     (t (if (validate-users-move current move horizontal vertical xo)
+          (progn
+	          (change-state (car current) (cadr current) (car move) (cadr move) xo)
+	          (let*
+		          ((horizontal-coded (states-to-matrix 1 dimension states))
+		           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+		           
+		           (if (evaluate-winner horizontal-coded vertical-coded move xo)
+			            (make-move (not xo)))
+	          )
+	      )
 
-              ((or (and xo (< (length (cadr states)) 4)) (and (not xo) (< (length (car states)) 4)) (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil -1) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil 1)) (progn (show-output horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+	      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo))
+)))))
 
-             (t (show-output horizontal-coded) (make-move (not xo)))))
-           )  
-          (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
-))))
+(defun make-move-ai (xo artifficial)
+  (if artifficial 
+	(let*
+		((new-states (cdr (max-value  (list states states-vertical) '(0) '(150) 3 xo))))
+		(progn
+			(setq states (car new-states))
+                        (setq states-vertical (cadr new-states))
+			(make-move-ai (not xo) (not artifficial))
+		)
+	)
+
+    (progn
+        (show-output (states-to-matrix 1 dimension states))
+	(format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
+	  (let* ((input (read))
+	         (current (form-move (car input)))
+	         (move (form-move (cadr input)))
+	         (player (if xo #\x #\o))
+	         (horizontal (states-to-matrix 1 dimension states))
+	         (vertical (states-to-matrix 1 dimension states-vertical))
+	         )
+		    (cond
+		     ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
+		     ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move-ai xo artifficial)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
+		     (t (if (validate-users-move current move horizontal vertical xo)
+		          (progn
+			          (change-state (car current) (cadr current) (car move) (cadr move) xo)
+			          (let*
+				          ((horizontal-coded (states-to-matrix 1 dimension states))
+				           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+				           
+				           (if (evaluate-winner horizontal-coded vertical-coded move xo)
+					            (make-move-ai (not xo) (not artifficial)))
+			          )
+			      )
+
+			      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move-ai xo artifficial))))))
+	)
+	)
+)
+
+(defun evaluate-winner (horizontal-matrix vertical-matrix move xo)
+	(cond
+        ((or (and xo (< (length (cadr states)) 4)) 
+        	(and (not xo) (< (length (car states)) 4)) 
+        	(check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 
+        	(check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 
+        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 
+        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1)) 
+        (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+
+        (t (progn (show-output horizontal-matrix) t))
+    )
+)
+
+(defun validate-users-move (current move horizontal vertical xo)
+	(cond
+		((or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
+            (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))))
+		 t
+        )
+        (t nil)
+	)
+)
 
 (defun form-move (move)
   (if (and (member (car move) '(A B C D E F G H I J K)) (member (cadr move) '(1 2 3 4 5 6 7 8 9 10 11)))
-      (cond 
+      (cond
        ((equal (car move) 'a) (list '1 (cadr move)))
        ((equal (car move) 'b) (list '2 (cadr move)))
        ((equal (car move) 'c) (list '3 (cadr move)))
@@ -102,7 +168,7 @@
        (remove-from-states (remove-from-states (car states-vertical-ptr) to-delete-vertical) (inverse-all to-delete-horizontal))
        (remove-from-states (remove-from-states (cadr states-vertical-ptr) to-delete-vertical) (inverse-all to-delete-horizontal))
       )
-     )    
+     )
    )
 )
 
@@ -116,28 +182,28 @@
 )
 
 ; sledece dve funkcije vracaju elemente koji treba da budu obrisani (x y)
-(defun check-row-sandwich (states-ptr row xo) 
-  (let* 
+(defun check-row-sandwich (states-ptr row xo)
+  (let*
       (
        (player (if xo (car states-ptr) (cadr states-ptr)))
        (opponent (if xo (cadr states-ptr) (car states-ptr)))
-      ) 
+      )
     (to-remove player opponent)
   )
 )
 
-(defun check-column-sandwich (states-vertical-ptr column xo) 
-  (let* 
+(defun check-column-sandwich (states-vertical-ptr column xo)
+  (let*
       (
        (player (if xo (car states-vertical-ptr) (cadr states-vertical-ptr)))
        (opponent (if xo (cadr states-vertical-ptr) (car states-vertical-ptr)))
-      ) 
+      )
     (to-remove player opponent)
   )
 )
 
 (defun to-remove (player opponent)
-  (let* 
+  (let*
       (
        (left-bound (car player))
        (right-bound (nth 1 player))
@@ -157,7 +223,7 @@
   )
 )
 
-(defun remove-from-states (states-ptr elto-remove) 
+(defun remove-from-states (states-ptr elto-remove)
   (cond
    ((null elto-remove) states-ptr)
    (t (remove-from-states (remove (car elto-remove) states-ptr :test 'equal) (cdr elto-remove)))
@@ -270,56 +336,102 @@
     )
   )
 
-(defun merge-all-states (horizontal-matrix vertical-matrix xo)
+;; implementiranje alfa beta algoritma
+
+(defun max-value (state-par alpha beta depth xo)
+  (cond
+    ;; ovde na mesto randoma ide heuristic-value od state
+    ((zerop depth) (list (random 150)))
+    (t (let
+           ((quit-flag NIL))
+         (progn
+           (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                      (if (< (car alpha) (car new-alpha)) (setf alpha (cons (car new-alpha)  x)))
+                    (when (>= (car alpha) (car beta)) (setq quit-flag T))
+                 ))
+           (cond
+             ((null quit-flag) alpha)
+             (t beta)
+             )))
+    )
+    )
+  )
+
+(defun min-value (state-par alpha beta depth xo)
+  (cond
+    ;; ovde na mesto randoma ide heuristic-value od state
+    ((zerop depth) (list (random 150)))
+    (t (let
+        ((quit-flag NIL))
+      (progn
+      (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+            do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
+                 (if (> (car beta) (car new-beta)) (setf beta (cons (car new-beta)  x)))
+               (when (>= (car alpha)(car beta)) (setq quit-flag T))
+            ))
+      (cond
+        ((null quit-flag) beta)
+        (t alpha)
+        )))
+    )
+    )
+  )
+
+(defun heuristic-value (state)
+(random 100)
+)
+
+(defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
   (append
-   (make-all-states (generate-states horizontal-matrix 1 xo) xo nil)
-   (make-all-states (generate-states vertical-matrix 1 xo) xo t)
+   (make-all-states states-h states-v (generate-states horizontal-matrix 1 xo) xo nil)
+   (make-all-states states-h states-v (generate-states vertical-matrix 1 xo) xo t)
   )
 )
 
-(defun make-all-states (all-states xo invert)
+(defun make-all-states (states-h states-v all-states xo invert)
   (cond
    ((null all-states) nil)
-   ((not (null (cadar all-states))) (append (make-states (caaar all-states) (cadaar all-states) (cadar all-states) xo invert) (make-all-states (cdr all-states) xo invert)))
-   (t (make-all-states (cdr all-states) xo invert))
+   ((not (null (cadar all-states))) (append (make-states states-h states-v (caaar all-states) (cadaar all-states) (cadar all-states) xo invert) (make-all-states states-h states-v (cdr all-states) xo invert)))
+   (t (make-all-states states-h states-v (cdr all-states) xo invert))
   )
 )
 
-(defun make-states (x y possible xo invert)
+(defun make-states (states-h states-v x y possible xo invert)
   (cond
    ((null possible) nil)
-   ((atom (car possible)) (make-state x y (car possible) (cadr possible) xo invert))
-   (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
+   ((atom (car possible)) (make-state states-h states-v x y (car possible) (cadr possible) xo invert))
+   (t (cons (make-state states-h states-v x y (caar possible) (cadar possible) xo invert) (make-states states-h states-v x y (cdr possible) xo invert)))
   )
 )
 
-(defun make-state (x y x-new y-new xo invert)
+(defun make-state (states-h states-v x y x-new y-new xo invert)
   (cond
-   ((and (not invert) xo) (progn 
+   ((and (not invert) xo) (progn
          (check-sandwich
-         (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states))
-         (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical))
+         (list (insert-state x-new y-new (remove-state x y (car states-h))) (cadr states-h))
+         (list (insert-state y-new x-new (remove-state y x (car states-v))) (cadr states-v))
          (list x-new y-new)
          t
          )))
    ((and (not invert) (not xo)) (progn
          (check-sandwich 
-         (list (car states) (insert-state x-new y-new (remove-state x y (cadr states))))
-         (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical))))
+         (list (car states-h) (insert-state x-new y-new (remove-state x y (cadr states-h))))
+         (list (car states-v) (insert-state y-new x-new (remove-state y x (cadr states-v))))
          (list x-new y-new)
          nil
          )))
    ((and invert xo) (progn 
          (check-sandwich 
-         (list (insert-state y-new x-new (remove-state y x (car states))) (cadr states))
-         (list (insert-state x-new y-new (remove-state x y (car states-vertical))) (cadr states-vertical))
+         (list (insert-state y-new x-new (remove-state y x (car states-h))) (cadr states-h))
+         (list (insert-state x-new y-new (remove-state x y (car states-v))) (cadr states-v))
          (list y-new x-new)
          t
          )))
    ((and invert (not xo)) (progn
          (check-sandwich 
-         (list (car states) (insert-state y-new x-new (remove-state y x (cadr states))))  
-         (list (car states-vertical) (insert-state x-new y-new (remove-state x y (cadr states-vertical))))
+         (list (car states-h) (insert-state y-new x-new (remove-state y x (cadr states-h))))  
+         (list (car states-v) (insert-state x-new y-new (remove-state x y (cadr states-v))))
          (list y-new x-new)
          nil
          )))
