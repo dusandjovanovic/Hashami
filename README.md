@@ -50,7 +50,9 @@ Sve funkcije su nezavisne i mogu da se koriste u sprezi sa drugim funkcijama ne 
 ## Min-max sa Alpha-beta odsecanjem
 
 Algoritam je realizovan kroz funkcije:
+
 `max-value (state-par alpha beta depth xo)`
+
 `min-value (state-par alpha beta depth xo)`
 
 Funkcija heuristike *heuristic-value (state)* će biti naknadno dodata algoritmu.
