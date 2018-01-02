@@ -291,10 +291,11 @@
     )
     )
   )
+
 (defun get-multiple-states (statea xo)
-  (let
-      ((newfirststate (car (merge-all-states (states-to-matrix 1 dimension (car statea)) (states-to-matrix 1 dimension (cadr statea)) xo))))
-    (car(merge-all-states (states-to-matrix 1 dimension (car newfirststate)) (states-to-matrix 1 dimension (cadr newfirststate)) (not xo)))
+  (let*
+      ((newfirststate (car (merge-all-states (states-to-matrix 1 dimension (car statea)) (states-to-matrix 1 dimension (cadr statea)) (car statea) (cadr statea) xo))))
+    (print (list newfirststate (merge-all-states (states-to-matrix 1 dimension (car newfirststate)) (states-to-matrix 1 dimension (cadr newfirststate)) (car newfirststate) (cadr newfirststate) (not xo))))
     )
   )
 
@@ -323,56 +324,56 @@
 (random 100)
 )
 
-(defun merge-all-states (horizontal-matrix vertical-matrix xo)
+(defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
   (append
-   (make-all-states (generate-states horizontal-matrix 1 xo) xo nil)
-   (make-all-states (generate-states vertical-matrix 1 xo) xo t)
+   (make-all-states states-h states-v (generate-states horizontal-matrix 1 xo) xo nil)
+   (make-all-states states-h states-v (generate-states vertical-matrix 1 xo) xo t)
   )
 )
 
-(defun make-all-states (all-states xo invert)
+(defun make-all-states (states-h states-v all-states xo invert)
   (cond
    ((null all-states) nil)
-   ((not (null (cadar all-states))) (append (make-states (caaar all-states) (cadaar all-states) (cadar all-states) xo invert) (make-all-states (cdr all-states) xo invert)))
-   (t (make-all-states (cdr all-states) xo invert))
+   ((not (null (cadar all-states))) (append (make-states states-h states-v (caaar all-states) (cadaar all-states) (cadar all-states) xo invert) (make-all-states states-h states-v (cdr all-states) xo invert)))
+   (t (make-all-states states-h states-v (cdr all-states) xo invert))
   )
 )
 
-(defun make-states (x y possible xo invert)
+(defun make-states (states-h states-v x y possible xo invert)
   (cond
    ((null possible) nil)
-   ((atom (car possible)) (make-state x y (car possible) (cadr possible) xo invert))
-   (t (cons (make-state x y (caar possible) (cadar possible) xo invert) (make-states x y (cdr possible) xo invert)))
+   ((atom (car possible)) (make-state states-h states-v x y (car possible) (cadr possible) xo invert))
+   (t (cons (make-state states-h states-v x y (caar possible) (cadar possible) xo invert) (make-states states-h states-v x y (cdr possible) xo invert)))
   )
 )
 
-(defun make-state (x y x-new y-new xo invert)
+(defun make-state (states-h states-v x y x-new y-new xo invert)
   (cond
    ((and (not invert) xo) (progn
          (check-sandwich
-         (list (insert-state x-new y-new (remove-state x y (car states))) (cadr states))
-         (list (insert-state y-new x-new (remove-state y x (car states-vertical))) (cadr states-vertical))
+         (list (insert-state x-new y-new (remove-state x y (car states-h))) (cadr states-h))
+         (list (insert-state y-new x-new (remove-state y x (car states-v))) (cadr states-v))
          (list x-new y-new)
          t
          )))
    ((and (not invert) (not xo)) (progn
          (check-sandwich 
-         (list (car states) (insert-state x-new y-new (remove-state x y (cadr states))))
-         (list (car states-vertical) (insert-state y-new x-new (remove-state y x (cadr states-vertical))))
+         (list (car states-h) (insert-state x-new y-new (remove-state x y (cadr states-h))))
+         (list (car states-v) (insert-state y-new x-new (remove-state y x (cadr states-v))))
          (list x-new y-new)
          nil
          )))
    ((and invert xo) (progn 
          (check-sandwich 
-         (list (insert-state y-new x-new (remove-state y x (car states))) (cadr states))
-         (list (insert-state x-new y-new (remove-state x y (car states-vertical))) (cadr states-vertical))
+         (list (insert-state y-new x-new (remove-state y x (car states-h))) (cadr states-h))
+         (list (insert-state x-new y-new (remove-state x y (car states-v))) (cadr states-v))
          (list y-new x-new)
          t
          )))
    ((and invert (not xo)) (progn
          (check-sandwich 
-         (list (car states) (insert-state y-new x-new (remove-state y x (cadr states))))  
-         (list (car states-vertical) (insert-state x-new y-new (remove-state x y (cadr states-vertical))))
+         (list (car states-h) (insert-state y-new x-new (remove-state y x (cadr states-h))))  
+         (list (car states-v) (insert-state x-new y-new (remove-state x y (cadr states-v))))
          (list y-new x-new)
          nil
          )))
