@@ -15,10 +15,13 @@
      ((equalp mode 1)
       (progn
         (form-matrix)
-        (show-output (states-to-matrix 1 dimension states))
-        (make-move t))
+        (make-move-ai t nil))
      )
-     ((equalp mode 2) nil)
+     ((equalp mode 2) 
+       (progn
+        (form-matrix)
+        (make-move-ai t t))
+     )
      ((equalp mode 3)
       (progn
          (form-matrix)
@@ -53,15 +56,59 @@
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
      (t (if (validate-users-move current move horizontal vertical xo)
           (progn
-          (change-state (car current) (cadr current) (car move) (cadr move) xo)
-          (let*
-	          ((horizontal-coded (states-to-matrix 1 dimension states))
-	           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-	           (evaluate-winner horizontal-coded vertical-coded move xo))
-          )
+	          (change-state (car current) (cadr current) (car move) (cadr move) xo)
+	          (let*
+		          ((horizontal-coded (states-to-matrix 1 dimension states))
+		           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+		           
+		           (if (evaluate-winner horizontal-coded vertical-coded move xo)
+			            (make-move (not xo)))
+	          )
+	      )
 
-          (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
-))))
+	      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo))
+)))))
+
+(defun make-move-ai (xo artifficial)
+  (if artifficial 
+	(let*
+		((new-states (cdr (max-value  (list states states-vertical) '(0) '(150) 3 xo))))
+		(progn
+			(setq states (car new-states))
+                        (setq states-vertical (cadr new-states))
+			(make-move-ai (not xo) (not artifficial))
+		)
+	)
+
+    (progn
+        (show-output (states-to-matrix 1 dimension states))
+	(format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
+	  (let* ((input (read))
+	         (current (form-move (car input)))
+	         (move (form-move (cadr input)))
+	         (player (if xo #\x #\o))
+	         (horizontal (states-to-matrix 1 dimension states))
+	         (vertical (states-to-matrix 1 dimension states-vertical))
+	         )
+		    (cond
+		     ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
+		     ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move-ai xo artifficial)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
+		     (t (if (validate-users-move current move horizontal vertical xo)
+		          (progn
+			          (change-state (car current) (cadr current) (car move) (cadr move) xo)
+			          (let*
+				          ((horizontal-coded (states-to-matrix 1 dimension states))
+				           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+				           
+				           (if (evaluate-winner horizontal-coded vertical-coded move xo)
+					            (make-move-ai (not xo) (not artifficial)))
+			          )
+			      )
+
+			      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move-ai xo artifficial))))))
+	)
+	)
+)
 
 (defun evaluate-winner (horizontal-matrix vertical-matrix move xo)
 	(cond
@@ -73,7 +120,8 @@
         	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1)) 
         (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
 
-        (t (show-output horizontal-matrix) (make-move (not xo))))
+        (t (progn (show-output horizontal-matrix) t))
+    )
 )
 
 (defun validate-users-move (current move horizontal vertical xo)
@@ -309,14 +357,6 @@
     )
     )
   )
-
-(defun get-multiple-states (statea xo)
-  (let*
-      ((newfirststate (car (merge-all-states (states-to-matrix 1 dimension (car statea)) (states-to-matrix 1 dimension (cadr statea)) (car statea) (cadr statea) xo))))
-    (print (list newfirststate (merge-all-states (states-to-matrix 1 dimension (car newfirststate)) (states-to-matrix 1 dimension (cadr newfirststate)) (car newfirststate) (cadr newfirststate) (not xo))))
-    )
-  )
-
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
