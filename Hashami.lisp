@@ -291,6 +291,13 @@
     )
     )
   )
+(defun get-multiple-states (statea xo)
+  (let
+      ((newfirststate (car (merge-all-states (states-to-matrix 1 dimension (car statea)) (states-to-matrix 1 dimension (cadr statea)) xo))))
+    (car(merge-all-states (states-to-matrix 1 dimension (car newfirststate)) (states-to-matrix 1 dimension (cadr newfirststate)) (not xo)))
+    )
+  )
+
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
