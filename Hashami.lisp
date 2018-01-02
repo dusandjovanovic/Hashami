@@ -51,22 +51,40 @@
     (cond
      ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-     (t (if (or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
-                (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))))
+     (t (if (validate-users-move current move horizontal vertical xo)
           (progn
           (change-state (car current) (cadr current) (car move) (cadr move) xo)
           (let*
-          ((horizontal-coded (states-to-matrix 1 dimension states))
-           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-           ; matrice kodiranja koje mogu da se pre povlacenja poteza prolsedjuju (validate-move ..))
-            (cond
+	          ((horizontal-coded (states-to-matrix 1 dimension states))
+	           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+	           (evaluate-winner horizontal-coded vertical-coded move xo))
+          )
 
-              ((or (and xo (< (length (cadr states)) 4)) (and (not xo) (< (length (car states)) 4)) (check-winner-state-horizontal (nth (1- (car move)) horizontal-coded) (car move) xo 0) (check-winner-state-vertical (nth (1- (cadr move)) vertical-coded) (cadr move) xo 0) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil -1) (check-winner-state-diagonal 1 horizontal-coded (if xo 'x 'o) nil 1)) (progn (show-output horizontal-coded) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
-
-             (t (show-output horizontal-coded) (make-move (not xo)))))
-           )
           (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo)))
 ))))
+
+(defun evaluate-winner (horizontal-matrix vertical-matrix move xo)
+	(cond
+        ((or (and xo (< (length (cadr states)) 4)) 
+        	(and (not xo) (< (length (car states)) 4)) 
+        	(check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 
+        	(check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 
+        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 
+        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1)) 
+        (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+
+        (t (show-output horizontal-matrix) (make-move (not xo))))
+)
+
+(defun validate-users-move (current move horizontal vertical xo)
+	(cond
+		((or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
+            (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))))
+		 t
+        )
+        (t nil)
+	)
+)
 
 (defun form-move (move)
   (if (and (member (car move) '(A B C D E F G H I J K)) (member (cadr move) '(1 2 3 4 5 6 7 8 9 10 11)))
