@@ -116,10 +116,11 @@
 	(cond
         ((or (and xo (< (length (cadr states)) 4)) 
         	(and (not xo) (< (length (car states)) 4)) 
-        	(check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 
-        	(check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 
-        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 
-        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1)) 
+        	(>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
+        	(>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
+        	(>= (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 5)
+        	(>= (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 5)
+        )
         (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
 
         (t (progn (show-output horizontal-matrix) t))
@@ -241,10 +242,10 @@
 
 (defun check-winner-state-horizontal (coded-row rownum xo counter) ; rownum za broj vrste | coded-row (nth rownum-1 horizontal-matrix)
   (cond
-   ((null coded-row) nil)
-   ((and xo (<= rownum 2)) nil)
-   ((and (not xo) (> rownum (- dimension 2))) nil)
-   ((equalp counter 5) t)
+   ((null coded-row) counter)
+   ((and xo (<= rownum 2)) counter)
+   ((and (not xo) (> rownum (- dimension 2))) counter)
+   ((equalp counter 5) counter)
    ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) (check-winner-state-horizontal (cdr coded-row) rownum xo (1+ counter)))
    (t (check-winner-state-horizontal (cdr coded-row) rownum xo 0))
   )
@@ -252,9 +253,9 @@
 
 (defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
   (cond
-   ((null coded-column) nil)
-   ((and (not xo) (> rownum (- dimension 2))) nil)
-   ((equalp counter 5) t)
+   ((null coded-column) counter)
+   ((and (not xo) (> rownum (- dimension 2))) counter)
+   ((equalp counter 5) counter)
    ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (and xo (> rownum 2))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
    ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
    (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
@@ -264,12 +265,11 @@
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
 
     (cond
-      ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
-                                 (t NIL)))
+      ((null encoded-list) (longest-sublist res 0))
       (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl
-                                                                                        (cond
-                                                                                          ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 2))))NIL)
-                                                                                          (t (car encoded-list))) xo res lr) lr))
+          (cond
+            ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 2)))) nil)
+            (t (car encoded-list))) xo res lr) lr))
       )
     )
 
