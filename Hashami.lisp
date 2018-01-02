@@ -76,7 +76,9 @@
 		(progn
 			(setq states (car new-states))
                         (setq states-vertical (cadr new-states))
-			(make-move-ai (not xo) (not artifficial))
+			;(if (evaluate-winner (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) move xo)
+                        ;(make-move-ai (not xo) (not artifficial)))
+                        (make-move-ai (not xo) (not artifficial))
 		)
 	)
 
