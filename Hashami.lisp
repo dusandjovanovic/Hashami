@@ -343,14 +343,14 @@
 (defun max-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (list (random 150)))
+    ((zerop depth) (random 150))
     (t (let
            ((quit-flag NIL))
          (progn
            (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
                  do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< (car alpha) (car new-alpha)) (setf alpha (cons (car new-alpha)  x)))
-                    (when (>= (car alpha) (car beta)) (setq quit-flag T))
+                      (if (< alpha new-alpha) (setf alpha new-alpha)))
+                    (when (>= alpha beta) (setq quit-flag T))
                  ))
            (cond
              ((null quit-flag) alpha)
@@ -358,25 +358,42 @@
              )))
     )
     )
-  )
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (list (random 150)))
+    ((zerop depth) (random 150))
     (t (let
         ((quit-flag NIL))
       (progn
       (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
-                 (if (> (car beta) (car new-beta)) (setf beta (cons (car new-beta)  x)))
-               (when (>= (car alpha)(car beta)) (setq quit-flag T))
+                 (if (> beta new-beta) (setf beta new-beta)))
+               (when (>= alpha beta) (setq quit-flag T))
             ))
       (cond
         ((null quit-flag) beta)
         (t alpha)
         )))
     )
+  )
+
+(defun alpha-beta (state-par alpha beta depth xo)
+  (cond
+    ;; ovde na mesto randoma ide heuristic-value od state
+    ((zerop depth)  (random 150))
+    (t (let
+           ((quit-flag NIL) (best-move NIL))
+         (progn
+           (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))
+                    (when (>= alpha beta) (setq quit-flag T))
+                 ))
+         (cond
+           ((null quit-flag) best-move)
+           (t beta)
+           )))
     )
   )
 
