@@ -72,7 +72,7 @@
 (defun make-move-ai (xo artifficial)
   (if artifficial 
 	(let*
-		((new-states (cdr (max-value  (list states states-vertical) '(0) '(150) 3 xo))))
+		((new-states (alpha-beta  (list states states-vertical) 0 150 3 xo)))
 		(progn
 			(setq states (car new-states))
                         (setq states-vertical (cadr new-states))
@@ -405,11 +405,11 @@
   	(let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
 
   		(cond
-  			((null vertical) (make-all-states states-h states-v horizontal xo t))
-  			((null horizontal) (make-all-states states-h states-v vertical xo nil))
+  			((null vertical) (make-all-states states-h states-v horizontal xo nil))
+  			((null horizontal) (make-all-states states-h states-v vertical xo t))
   			(t (append
-   				(make-all-states states-h states-v vertical xo nil)
-   				(make-all-states states-h states-v horizontal xo t)
+   				(make-all-states states-h states-v horizontal xo nil)
+   				(make-all-states states-h states-v vertical xo t)
 			))
   		)
   	)
