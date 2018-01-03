@@ -47,7 +47,6 @@
   (let* ((input (read))
          (current (form-move (car input)))
          (move (form-move (cadr input)))
-         (player (if xo #\x #\o))
          (horizontal (states-to-matrix 1 dimension states))
          (vertical (states-to-matrix 1 dimension states-vertical))
          )
@@ -88,7 +87,6 @@
 	  (let* ((input (read))
 	         (current (form-move (car input)))
 	         (move (form-move (cadr input)))
-	         (player (if xo #\x #\o))
 	         (horizontal (states-to-matrix 1 dimension states))
 	         (vertical (states-to-matrix 1 dimension states-vertical))
 	         )
@@ -159,8 +157,8 @@
 ; parametri su states/states-vertical vraca listu ((new states) (new states-vertical)) :: integrisano u generator stanja (make-all-states)
 (defun check-sandwich (states-ptr states-vertical-ptr move xo)
   (let* ( 
-         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) (car move) xo))
-         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) (cadr move) xo))
+         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) xo))
+         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo))
         )
      (list
       (list
@@ -185,7 +183,7 @@
 )
 
 ; sledece dve funkcije vracaju elemente koji treba da budu obrisani (x y)
-(defun check-row-sandwich (states-ptr row xo)
+(defun check-row-sandwich (states-ptr xo)
   (let*
       (
        (player (if xo (car states-ptr) (cadr states-ptr)))
@@ -195,7 +193,7 @@
   )
 )
 
-(defun check-column-sandwich (states-vertical-ptr column xo)
+(defun check-column-sandwich (states-vertical-ptr xo)
   (let*
       (
        (player (if xo (car states-vertical-ptr) (cadr states-vertical-ptr)))
@@ -646,10 +644,6 @@
    ((zerop dim) nil)
    (t (append (initial-column-extend (- dim 1)) (List (list dim (- dimension 1)) (list dim dimension))))
   )
-)
-
-(defun show-initial-matrix (dim)
-  (print-matrix(states-to-matrix 1 dim  (initial-states dim)))
 )
 
 (defun print-matrix (mat indices)
