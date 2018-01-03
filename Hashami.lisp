@@ -72,7 +72,7 @@
 (defun make-move-ai (xo artifficial)
   (if artifficial 
 	(let*
-		((new-states (alpha-beta  (list states states-vertical) 0 150 3 xo)))
+		((new-states (alpha-beta  (list states states-vertical) 0 150 4 xo)))
 		(progn
 			(setq states (car new-states))
                         (setq states-vertical (cadr new-states))
@@ -251,14 +251,70 @@
   )
 )
 
+(defun altern-state-horizontal (coded-row rownum xo counter missing)
+  (cond
+   ((null coded-row) missing)
+   ((and xo (< rownum 2)) missing)
+   ((and (not xo) (>= rownum (- dimension 2))) missing)
+   ((equalp counter 5) 0)
+   ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) 
+	(if (> missing (- 4 counter)) 
+   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) (- 4 counter))
+   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) missing)
+   	)
+   	)
+   (t (altern-state-horizontal (cdr coded-row) rownum xo 0 missing))
+  )
+)
+
+; (heuristic-state-horizontal (states-to-matrix 1 dimension states) 0 xo)
+; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku vrstu matrice (0... dimension-1)
+
+(defun heuristic-state-horizontal (row-matrix rownum xo )
+	(if (null row-matrix) nil 
+		(cons 
+			(altern-state-horizontal (car row-matrix) rownum xo 0 5)
+	 		(heuristic-state-horizontal (cdr row-matrix) (+ rownum 1) xo)
+	 	)
+ 	)
+)
+
 (defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
   (cond
    ((null coded-column) counter)
    ((and (not xo) (> rownum (- dimension 2))) counter)
    ((equalp counter 5) counter)
-   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (and xo (> rownum 2))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (or (and xo (> rownum 2)) (and (not xo) (<= rownum (- dimension 2))))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
    ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
    (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
+  )
+)
+
+; (heuristic-state-vertical (states-to-matrix 1 dimension states-vertical) 0 xo)
+; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku kolonu matrice (0... dimension-1)
+
+(defun heuristic-state-vertical (column-matrix columnum xo)
+	(if (null column-matrix) nil 
+		(cons 
+			(altern-state-vertical (car column-matrix) columnum xo 0 5)
+	 		(heuristic-state-vertical (cdr column-matrix) 0 xo)
+	 	)
+ 	)
+)
+
+(defun altern-state-vertical (coded-column rownum xo counter missing) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
+  (cond
+   ((null coded-column) missing)
+   ((and (not xo) (>= rownum (- dimension 2))) missing)
+   ((equalp counter 5) 0)
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (or (and xo (>= rownum 2)) (and (not xo) (< rownum (- dimension 2)))))
+	(if (> missing (- 4 counter)) 
+		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) (- 4 counter))
+		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) missing)
+   	)
+   )
+   ((listp (car coded-column)) (altern-state-vertical (cdr coded-column) (1+ rownum) xo 0 missing))
+   (t (altern-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0 missing))
   )
 )
 
