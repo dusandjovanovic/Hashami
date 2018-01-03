@@ -385,10 +385,17 @@
 )
 
 (defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
-  (append
-   (make-all-states states-h states-v (generate-states horizontal-matrix 1 xo) xo nil)
-   (make-all-states states-h states-v (generate-states vertical-matrix 1 xo) xo t)
-  )
+  	(let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
+
+  		(cond
+  			((null vertical) (make-all-states states-h states-v horizontal xo t))
+  			((null horizontal) (make-all-states states-h states-v vertical xo nil))
+  			(t (append
+   				(make-all-states states-h states-v vertical xo nil)
+   				(make-all-states states-h states-v horizontal xo t)
+			))
+  		)
+  	)
 )
 
 (defun make-all-states (states-h states-v all-states xo invert)
@@ -402,7 +409,7 @@
 (defun make-states (states-h states-v x y possible xo invert)
   (cond
    ((null possible) nil)
-   ((atom (car possible)) (make-state states-h states-v x y (car possible) (cadr possible) xo invert))
+   ((atom (car possible)) (list (make-state states-h states-v x y (car possible) (cadr possible) xo invert)))
    (t (cons (make-state states-h states-v x y (caar possible) (cadar possible) xo invert) (make-states states-h states-v x y (cdr possible) xo invert)))
   )
 )
