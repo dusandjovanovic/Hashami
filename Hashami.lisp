@@ -249,6 +249,44 @@
   )
 )
 
+(defun altern-state-sandwich (coded-row rownum xo counter vertical-bool)
+  (cond
+   ((null coded-row) counter)
+   ((and xo (not vertical-bool) (< rownum 2)) counter)
+   ((and (not xo) (>= rownum (- dimension 2))) counter)
+   ((and 
+   	(listp (car coded-row)) 
+   	(equalp (cadar coded-row) (if xo 'x 'o)) 
+   	(listp (cadr coded-row))
+   	(equalp (cadadr coded-row) (if xo 'o 'x))
+   	)
+   		(if vertical-bool 
+   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool)
+			(altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool)
+   		)
+   )
+   (t (if vertical-bool 
+   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool)
+			(altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool)
+   	  )
+   )
+  )
+)
+
+; (heuristic-state-sandwich (states-to-matrix 1 dimension states) 0 xo nil)
+; (heuristic-state-sandwich (states-to-matrix 1 dimension states-vertical) 0 xo t)
+; vertical bool: t za nalazanje potenijalnih vertikalnih sendvica
+; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
+
+(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool)
+	(if (null row-matrix) nil 
+		(cons 
+			(altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool)
+	 		(heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool)
+	 	)
+ 	)
+)
+
 (defun altern-state-horizontal (coded-row rownum xo counter missing)
   (cond
    ((null coded-row) missing)
