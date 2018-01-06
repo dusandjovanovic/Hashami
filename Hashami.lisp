@@ -59,7 +59,6 @@
 	          (let*
 		          ((horizontal-coded (states-to-matrix 1 dimension states))
 		           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-		           
 		           (if (evaluate-winner horizontal-coded vertical-coded move xo)
 			            (make-move (not xo)))
 	          )
@@ -69,7 +68,7 @@
 )))))
 
 (defun make-move-ai (xo artifficial)
-  (if artifficial 
+  (if artifficial
 	(let*
 		((new-states (alpha-beta  (list states states-vertical) 0 150 4 xo)))
 		(progn
@@ -99,7 +98,6 @@
 			          (let*
 				          ((horizontal-coded (states-to-matrix 1 dimension states))
 				           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-				           
 				           (if (evaluate-winner horizontal-coded vertical-coded move xo)
 					            (make-move-ai (not xo) (not artifficial)))
 			          )
@@ -272,6 +270,25 @@
    )
   )
 )
+;; lista 1 30 nil
+(defun list-to-heuristic (list level multiplier result)
+  (cond
+    ((>= level 4) (+ result (* 0.2 (count 2 list))))
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (sqrt multiplier) result)))
+    )
+  )
+
+(defun heuristic-value (states-hor states-vert xo)
+
+  (let ((coded-horizontal (states-to-matrix 1 dimension states-hor) )
+           (coded-vertical (states-to-matrix 1 dimension states-vert)))
+  (+ (list-to-heuristic (heuristic-state-horizontal (states-to-matrix 1 dimension states-hor) 0 xo ) 1 50 0 )
+     (list-to-heuristic (heuristic-state-vertical (states-to-matrix 1 dimension states-vert) 0 xo ) 1 50 0)
+     (* 5 (count 1 (heuristic-state-sandwich coded-horizontal 0 xo nil)))
+     (* 5 (count 1 (heuristic-state-sandwich coded-vertical 0 xo t)))
+     )
+    )
+  )
 
 ; (heuristic-state-sandwich (states-to-matrix 1 dimension states) 0 xo nil)
 ; (heuristic-state-sandwich (states-to-matrix 1 dimension states-vertical) 0 xo t)
@@ -353,6 +370,8 @@
    (t (altern-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0 missing))
   )
 )
+
+
 
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
 
@@ -489,9 +508,6 @@
     )
   )
 
-(defun heuristic-value (state)
-(random 100)
-)
 
 (defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
   	(let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
