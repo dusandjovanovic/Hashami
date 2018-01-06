@@ -73,10 +73,10 @@
 		((new-states (alpha-beta  (list states states-vertical) -200 200 4 xo)))
 		(progn
 			(setq states (car new-states))
-                        (setq states-vertical (cadr new-states))
-			;(if (evaluate-winner (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) move xo)
-                        ;(make-move-ai (not xo) (not artifficial)))
-                        (make-move-ai (not xo) (not artifficial))
+      (setq states-vertical (cadr new-states))
+			(if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
+          (make-move-ai (not xo) (not artifficial))
+      )
 		)
 	)
 
