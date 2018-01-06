@@ -63,4 +63,19 @@ Svaka od navedenih funkcija prolazi kroz listu stanja generisanih funkcijom merg
 
 ## Funkcija za procenu heurističke vrednosti stanja
 
-Funkcija heuristike *heuristic-value (state)* će biti naknadno dodata algoritmu
+Funkcija za procenu heurističke vrednosti stanja sama po sebi zahteva efikasno a pritom i napredno rešenje kako bi se izbegli i predugo vreme proračuna i nedovoljno ozbiljno razmatranje svih parametara koji utiču na valjanost poteza. Poziv funkcije
+
+`heuristic-value (states-horizontal states-vertical xo)`
+
+za ulazne argumente prihvata horizontale i vertikalne nekodirane liste stanja kao i igrača koji je na potezu, a kao izlaz šalju brojnu vrednost formiranu kombinovanjem različitih faktora. U ove faktore ubrajaju se broj vertikalno, horizontalno i dijagonalno poređanih figura, kao i broj potencijalnih sendvič scenarija. Ključne pomoćne funkcije koje se koriste za realizovanje heuristic-value funkcije su:
+
+`heuristic-state-horizontal (row-matrix rownum xo)`
+`heuristic-state-vertical (column-matrix columnum xo)`
+`heuristic-value-diagonal (diagonals result)`
+`heuristic-state-sandwich (row-matrix rownum xo vertical-bool)`
+
+Prve tri navedene funkcije kao povratne vrednosti prosleđuju liste čiji elementi predstavljaju broj figura neophodnih da bi se obrazovao niz od pet figura. Njihova maltene identična struktura povratnih vrednosti omogućava nam korišćenje ključne podfunkcije za konverziju takvih listi u brojne heurističke vrednosti bez ikakvog prilagođavanja. Navedena funkcija za konverziju, 
+
+`list-to-heuristic (list level multiplier result)`
+
+prolazi kroz prosleđenu listu rekurzivno za svaki od mogućih brojeva elemenata u nizu, i u odnosu na udaljenost od ciljnog broja elemenata množi sa različitim faktorima skaliranjima. Kako se po listi argumenata da videti, na osnovu argumenata prosleđenih ovoj funkciji možemo podesiti stil igre na ofanzivniji ili defanzivniji. Zbir povratnih vrednosti svih prethodno pomenutih funkcija se sabiraju i vraćaju kao rezultat glavne funkcije heuristic-value.
