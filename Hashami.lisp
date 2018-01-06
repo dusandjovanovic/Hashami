@@ -75,14 +75,18 @@
 			(setq states (car new-states))
       (setq states-vertical (cadr new-states))
 			(if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
+          (progn 
+            (show-output horizontal-matrix) 
+            (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)
+          )
           (make-move-ai (not xo) (not artifficial))
-      )
-		)
-	)
+		  )
+	 )
+  )
 
     (progn
-        (show-output (states-to-matrix 1 dimension states))
-	(format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
+    (show-output (states-to-matrix 1 dimension states))
+	  (format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
 	  (let* ((input (read))
 	         (current (form-move (car input)))
 	         (move (form-move (cadr input)))
@@ -131,10 +135,10 @@
           (equalp (apply 'min (heuristic-state-vertical vertical-matrix 0 xo )) 0)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
+         )
+        t
         )
-        (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
-
-        (t (progn (show-output horizontal-matrix) t))
+        (t nil)
     )
 )
 
