@@ -454,7 +454,7 @@
 (defun max-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
+    ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) xo) (heuristic-value (car state-par) (cadr state-par) (not xo))))
     (t (let
            ((quit-flag NIL))
          (progn
@@ -473,7 +473,7 @@
 (defun min-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (- 0 (heuristic-value (car state-par) (cadr state-par) xo)))
+    ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
       (progn
