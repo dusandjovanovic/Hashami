@@ -507,11 +507,11 @@
                  do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
                       (if (< alpha new-alpha) (setf alpha new-alpha)))
                     (when (>= alpha beta) (setq quit-flag T))
-                 ))
+                 )
            (cond
              ((null quit-flag) alpha)
              (t beta)
-             )))
+             ))))
     )
     )
 
@@ -526,11 +526,11 @@
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
                  (if (> beta new-beta) (setf beta new-beta)))
                (when (>= alpha beta) (setq quit-flag T))
-            ))
+            )
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        )))
+        ))))
     )
   )
 
@@ -543,16 +543,16 @@
          (progn
            (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
                  do (cond
-                      ((not (null (evaluate-winner-ai (states-to-matrix 1 dimension (car x)) (states-to-matrix (cadr x)) xo))) (progn (setf is-terminal t) (setf best-move x) (setf quit-flag T))) 
-                    (t let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x)))))
+                      ((not (null (evaluate-winner-ai (states-to-matrix 1 dimension (car x)) (states-to-matrix 1 dimension (cadr x)) xo))) (progn (setf is-terminal t) (setf best-move x) (setf quit-flag T)))
+                    (t (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))))
                     (when (>= alpha beta) (setq quit-flag T))
-                 ))
+                 )
          (cond
            ((null quit-flag) best-move)
            ((not (null is-terminal)) best-move)
            (t beta)
-           )))
+           ))))
     )
   )
 
@@ -655,7 +655,7 @@
                       ))
       ;; ako je value lista, a pethodi mu slobodno mesto
       ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T T))))
-      (and (numberp seclst)(not (zerop seclst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
+      ((and (numberp seclst)(not (zerop seclst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
