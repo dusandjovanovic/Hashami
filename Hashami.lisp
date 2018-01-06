@@ -114,8 +114,8 @@
         	(and (not xo) (< (length (car states)) 4)) 
         	(>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
         	(>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
-        	(>= (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 5)
-        	(>= (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 5)
+        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
+        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
         )
         (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
 
@@ -400,14 +400,13 @@
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
 
     (cond
-      ((null encoded-list) (longest-sublist res 0))
+      ((null encoded-list) res)
       (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl
           (cond
             ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 2)))) nil)
             (t (car encoded-list))) xo res lr) lr))
       )
     )
-
 
 (defun longest-sublist (all longest)
   (cond
