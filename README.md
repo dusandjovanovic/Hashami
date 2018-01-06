@@ -49,10 +49,18 @@ Sve funkcije su nezavisne i mogu da se koriste u sprezi sa drugim funkcijama ne 
 
 ## Min-max sa Alpha-beta odsecanjem
 
-Algoritam je realizovan kroz funkcije:
+Naredni potez AI igrača određuje se pozivanja funkcije
+
+`alpha-beta(states alpha beta depth xo)` 
+
+koja za ulazne argumente uzima trenutno stanje igre, početne vrednosti alfa i beta granica, željenu dubinu pretraživanja i stranu na kojoj igra AI, a kao izlaz vraća stanje koje treba zauzeti kada se odigra potez koji je algoritam procenio za najbolji. Pošto se igrač na potezu uzima za maksimizirajućeg igrača, alfa beta poziva min-value pomoćnu funkciju, koja se zatim smenjuje sa pomoćnom funkcijom max-value do tražene dubine.
 
 `max-value (state-par alpha beta depth xo)`
 
 `min-value (state-par alpha beta depth xo)`
 
-Funkcija heuristike *heuristic-value (state)* će biti naknadno dodata algoritmu.
+Svaka od navedenih funkcija prolazi kroz listu stanja generisanih funkcijom merge-all-states pomoću loop petlje, te se naizmeničnim međusobnim pozivanjem dolazi do zadate dubine, kada se na mesto daljeg napredovanja u dobinu računa heuristička vrednost za prosleđeno stanje. Prilikom povratka kroz rekurziju, aktuelizuju se vrednosti alfa i beta parametara, i vršu odsecanje tamo gde se ostvari uslov izjednačavanja ili prekoračenja vrednosti alfa parametra u odnosu na beta parametar. Za razliku od alpha-beta funkcije koja kao povratnu vrednost vraća stanje u koje treba preći, povratne vrednosti funkcija max-value i min-value su brojne vrednosti dobijene na osnovu heurističke funkcije ukoliko se radi o poslednjem nivou pretraživanja, ili vrednosti proračunate na osnovu potomaka i u skladu sa alfa i beta parametrima za više nivoe.
+
+## Funkcija za procenu heurističke vrednosti stanja
+
+Funkcija heuristike *heuristic-value (state)* će biti naknadno dodata algoritmu
