@@ -70,7 +70,7 @@
 (defun make-move-ai (xo artifficial)
   (if artifficial
 	(let*
-		((new-states (alpha-beta  (list states states-vertical) 0 150 4 xo)))
+		((new-states (alpha-beta  (list states states-vertical) -200 200 4 xo)))
 		(progn
 			(setq states (car new-states))
                         (setq states-vertical (cadr new-states))
@@ -274,16 +274,16 @@
 (defun list-to-heuristic (list level multiplier result)
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
-    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (sqrt multiplier) result)))
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 2) result)))
     )
   )
-
+;; prosledjuju se nekodirane matrice i t/f, vraca se vrednost, moze se izbaciti t/f
 (defun heuristic-value (states-hor states-vert xo)
 
   (let ((coded-horizontal (states-to-matrix 1 dimension states-hor) )
            (coded-vertical (states-to-matrix 1 dimension states-vert)))
-  (+ (list-to-heuristic (heuristic-state-horizontal (states-to-matrix 1 dimension states-hor) 0 xo ) 1 50 0 )
-     (list-to-heuristic (heuristic-state-vertical (states-to-matrix 1 dimension states-vert) 0 xo ) 1 50 0)
+  (+ (list-to-heuristic (heuristic-state-horizontal (states-to-matrix 1 dimension states-hor) 0 xo ) 0 50 0 )
+     (list-to-heuristic (heuristic-state-vertical (states-to-matrix 1 dimension states-vert) 0 xo ) 0 50 0)
      (* 5 (count 1 (heuristic-state-sandwich coded-horizontal 0 xo nil)))
      (* 5 (count 1 (heuristic-state-sandwich coded-vertical 0 xo t)))
      )
@@ -454,7 +454,7 @@
 (defun max-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (random 150))
+    ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
     (t (let
            ((quit-flag NIL))
          (progn
@@ -473,7 +473,7 @@
 (defun min-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (random 150))
+    ((zerop depth) (- 0 (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
       (progn
@@ -492,7 +492,7 @@
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth)  (random 150))
+    ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
     (t (let
            ((quit-flag NIL) (best-move NIL))
          (progn
