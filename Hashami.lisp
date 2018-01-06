@@ -395,17 +395,25 @@
   )
 )
 
-
-
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
 
     (cond
       ((null encoded-list) res)
       (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl
           (cond
-            ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 2)))) nil)
+            ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 1)))) nil)
             (t (car encoded-list))) xo res lr) lr))
       )
+  )
+
+;;(heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal 'x  nil 1) nil)
+(defun heuristic-value-diagonal (diagonals result)
+  (cond
+    ((null diagonals) result)
+    (t (cons
+         (append result (- 5 (length (car diagonals))))
+         (heuristic-value-diagonal (cdr diagonals) result)))
+       )
     )
 
 (defun longest-sublist (all longest)
