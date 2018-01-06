@@ -270,25 +270,49 @@
    )
   )
 )
-;; lista 1 30 nil
+
 (defun list-to-heuristic (list level multiplier result)
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
     (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 2) result)))
     )
   )
+
+(defun non-zero-inlist (list count) 
+  (cond
+    ((null list) count)
+    ((zerop (car list)) (non-zero-inlist (cdr list) count))
+    (t (non-zero-inlist (cdr list) (1+ count)))
+  )
+)
+
 ;; prosledjuju se nekodirane matrice i t/f, vraca se vrednost, moze se izbaciti t/f
 (defun heuristic-value (states-hor states-vert xo)
-
-  (let ((coded-horizontal (states-to-matrix 1 dimension states-hor) )
-           (coded-vertical (states-to-matrix 1 dimension states-vert)))
-  (+ (list-to-heuristic (heuristic-state-horizontal (states-to-matrix 1 dimension states-hor) 0 xo ) 0 50 0 )
-     (list-to-heuristic (heuristic-state-vertical (states-to-matrix 1 dimension states-vert) 0 xo ) 0 50 0)
-     (* 5 (count 1 (heuristic-state-sandwich coded-horizontal 0 xo nil)))
-     (* 5 (count 1 (heuristic-state-sandwich coded-vertical 0 xo t)))
+(let ((coded-horizontal (states-to-matrix 1 dimension states-hor))
+      (coded-vertical (states-to-matrix 1 dimension states-vert))
+      (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
+    (+ (list-to-heuristic (heuristic-state-horizontal coded-horizontal 0 xo ) 0 50 0 )
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 50 0)
+       (* 10 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil) 0))
+       (* 10 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t) 0))
+       (* 10 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil 1))
+       (* 10 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil -1))
+       (cond
+          ((<= opponent-length 5) 200)
+          ((<= opponent-length 8) 180)
+          ((<= opponent-length 10) 140)
+          ((<= opponent-length 12) 120)
+          ((<= opponent-length 14) 110)
+          ((<= opponent-length 16) 100)
+          ((<= opponent-length 17) 80)
+          ((<= opponent-length 18) 60)
+          ((<= opponent-length 19) 40)
+          (t 0)
+       )
     )
   )
+)
 
 ; (heuristic-state-sandwich (states-to-matrix 1 dimension states) 0 xo nil)
 ; (heuristic-state-sandwich (states-to-matrix 1 dimension states-vertical) 0 xo t)
