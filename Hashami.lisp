@@ -274,7 +274,7 @@
 (defun list-to-heuristic (list level multiplier result)
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
-    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 2) result)))
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 4) result)))
     )
   )
 
@@ -292,12 +292,12 @@
       (coded-vertical (states-to-matrix 1 dimension states-vert))
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
-    (+ (list-to-heuristic (heuristic-state-horizontal coded-horizontal 0 xo ) 0 50 0 )
-       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 50 0)
-       (* 10 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil) 0))
-       (* 10 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t) 0))
-       (* 10 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil 1))
-       (* 10 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil -1))
+    (+ (list-to-heuristic (heuristic-state-horizontal coded-horizontal 0 xo ) 0 200 0 )
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 200 0)
+       (* 15 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil) 0))
+       (* 15 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t) 0))
+       (* 30 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil 1))
+       (* 30 (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o)  nil -1))
        (cond
           ((<= opponent-length 5) 200)
           ((<= opponent-length 8) 180)
