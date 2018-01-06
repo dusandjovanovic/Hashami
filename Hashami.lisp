@@ -643,12 +643,16 @@
 ;      ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
       ((atom value) (cond
                       ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
-                      ((listp lst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl lst value NIL))))
+                      ((listp lst) (cond
+                                     ((and (not(null seclst)) (listp seclst)) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T T) (append-moves-for-row lvl lst value NIL T))))
+                       (t (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl lst value NIL T))))))
                       ((zerop lst)(cond
-                                    ((and (not(null seclst)) (listp seclst))(generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T))))
+                                    ((and (not(null seclst)) (listp seclst))(generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T T))))
                                     (t (generate-moves-for-row lvl lst value xo (cdr row) res))))
                       ))
-      ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T))))
+      ;; ako je value lista, a pethodi mu slobodno mesto
+      ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T T))))
+      ((numberp seclst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
@@ -665,9 +669,10 @@
     )
 )
 
-(defun append-moves-for-row (lvl el size prev)
+(defun append-moves-for-row (lvl el size prev forward)
     (list(cons (list lvl (car el)) (list (cond
-                                        ((zerop size) (list lvl (+ (car el) 2)))
+                                           ((zerop size) (cond ((not(null forward))(list lvl (+ (car el) 2)))
+                                                               (t (list lvl (- (car el) 2)))))
                                         (t (loop for x from 1 to size collect (list lvl (cond
                                                                                           ((null prev)(+ (car el) x))
                                                                                           (t (- (car el) x))))))))))
