@@ -47,7 +47,6 @@
   (let* ((input (read))
          (current (form-move (car input)))
          (move (form-move (cadr input)))
-         (player (if xo #\x #\o))
          (horizontal (states-to-matrix 1 dimension states))
          (vertical (states-to-matrix 1 dimension states-vertical))
          )
@@ -60,7 +59,6 @@
 	          (let*
 		          ((horizontal-coded (states-to-matrix 1 dimension states))
 		           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-		           
 		           (if (evaluate-winner horizontal-coded vertical-coded move xo)
 			            (make-move (not xo)))
 	          )
@@ -70,13 +68,15 @@
 )))))
 
 (defun make-move-ai (xo artifficial)
-  (if artifficial 
+  (if artifficial
 	(let*
-		((new-states (cdr (max-value  (list states states-vertical) '(0) '(150) 3 xo))))
+		((new-states (alpha-beta  (list states states-vertical) -200 200 4 xo)))
 		(progn
 			(setq states (car new-states))
-                        (setq states-vertical (cadr new-states))
-			(make-move-ai (not xo) (not artifficial))
+      (setq states-vertical (cadr new-states))
+			(if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
+          (make-move-ai (not xo) (not artifficial))
+      )
 		)
 	)
 
@@ -86,7 +86,6 @@
 	  (let* ((input (read))
 	         (current (form-move (car input)))
 	         (move (form-move (cadr input)))
-	         (player (if xo #\x #\o))
 	         (horizontal (states-to-matrix 1 dimension states))
 	         (vertical (states-to-matrix 1 dimension states-vertical))
 	         )
@@ -99,7 +98,6 @@
 			          (let*
 				          ((horizontal-coded (states-to-matrix 1 dimension states))
 				           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-				           
 				           (if (evaluate-winner horizontal-coded vertical-coded move xo)
 					            (make-move-ai (not xo) (not artifficial)))
 			          )
@@ -114,10 +112,26 @@
 	(cond
         ((or (and xo (< (length (cadr states)) 4)) 
         	(and (not xo) (< (length (car states)) 4)) 
-        	(check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 
-        	(check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 
-        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 
-        	(check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1)) 
+        	(>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
+        	(>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
+        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
+        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
+        )
+        (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
+
+        (t (progn (show-output horizontal-matrix) t))
+    )
+)
+
+(defun evaluate-winner-ai (horizontal-matrix vertical-matrix xo)
+  (cond
+        ((or (and xo (< (length (cadr states)) 4)) 
+          (and (not xo) (< (length (car states)) 4)) 
+          (equalp (apply 'min (heuristic-state-horizontal horizontal-matrix 0 xo )) 0)
+          (equalp (apply 'min (heuristic-state-vertical vertical-matrix 0 xo )) 0)
+          (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
+          (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
+        )
         (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
 
         (t (progn (show-output horizontal-matrix) t))
@@ -156,8 +170,8 @@
 ; parametri su states/states-vertical vraca listu ((new states) (new states-vertical)) :: integrisano u generator stanja (make-all-states)
 (defun check-sandwich (states-ptr states-vertical-ptr move xo)
   (let* ( 
-         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) (car move) xo))
-         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) (cadr move) xo))
+         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) xo))
+         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo))
         )
      (list
       (list
@@ -182,7 +196,7 @@
 )
 
 ; sledece dve funkcije vracaju elemente koji treba da budu obrisani (x y)
-(defun check-row-sandwich (states-ptr row xo)
+(defun check-row-sandwich (states-ptr xo)
   (let*
       (
        (player (if xo (car states-ptr) (cadr states-ptr)))
@@ -192,7 +206,7 @@
   )
 )
 
-(defun check-column-sandwich (states-vertical-ptr column xo)
+(defun check-column-sandwich (states-vertical-ptr xo)
   (let*
       (
        (player (if xo (car states-vertical-ptr) (cadr states-vertical-ptr)))
@@ -239,38 +253,182 @@
 
 (defun check-winner-state-horizontal (coded-row rownum xo counter) ; rownum za broj vrste | coded-row (nth rownum-1 horizontal-matrix)
   (cond
-   ((null coded-row) nil)
-   ((and xo (<= rownum 2)) nil)
-   ((and (not xo) (> rownum (- dimension 2))) nil)
-   ((equalp counter 5) t)
+   ((null coded-row) counter)
+   ((and xo (<= rownum 2)) counter)
+   ((and (not xo) (> rownum (- dimension 2))) counter)
+   ((equalp counter 5) counter)
    ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) (check-winner-state-horizontal (cdr coded-row) rownum xo (1+ counter)))
    (t (check-winner-state-horizontal (cdr coded-row) rownum xo 0))
   )
 )
 
+(defun altern-state-sandwich (coded-row rownum xo counter vertical-bool)
+  (cond
+   ((null coded-row) counter)
+   ((and xo (not vertical-bool) (< rownum 2)) counter)
+   ((and (not xo) (>= rownum (- dimension 2))) counter)
+   ((and 
+   	(listp (car coded-row)) 
+   	(equalp (cadar coded-row) (if xo 'x 'o)) 
+   	(listp (cadr coded-row))
+   	(equalp (cadadr coded-row) (if xo 'o 'x))
+   	)
+   		(if vertical-bool 
+   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool)
+			(altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool)
+   		)
+   )
+   (t (if vertical-bool 
+   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool)
+			(altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool)
+   	  )
+   )
+  )
+)
+
+(defun list-to-heuristic (list level multiplier result)
+  (cond
+    ((>= level 4) (+ result (* 0.2 (count 2 list))))
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 3) result)))
+    )
+  )
+
+(defun non-zero-inlist (list count) 
+  (cond
+    ((null list) count)
+    ((zerop (car list)) (non-zero-inlist (cdr list) count))
+    (t (non-zero-inlist (cdr list) (1+ count)))
+  )
+)
+
+;; prosledjuju se nekodirane matrice i t/f, vraca se vrednost, moze se izbaciti t/f
+(defun heuristic-value (states-hor states-vert xo)
+(let ((coded-horizontal (states-to-matrix 1 dimension states-hor))
+      (coded-vertical (states-to-matrix 1 dimension states-vert))
+      (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
+     )
+    (+ (list-to-heuristic (heuristic-state-horizontal coded-horizontal 0 xo ) 0 200 0)
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 200 0)
+       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil) 0))
+       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t) 0))
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 200 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 200 0)
+       (cond
+          ((<= opponent-length 5) 200)
+          ((<= opponent-length 8) 180)
+          ((<= opponent-length 10) 140)
+          ((<= opponent-length 12) 120)
+          ((<= opponent-length 14) 110)
+          ((<= opponent-length 16) 100)
+          ((<= opponent-length 17) 80)
+          ((<= opponent-length 18) 60)
+          ((<= opponent-length 19) 40)
+          (t 0)
+       )
+    )
+  )
+)
+
+; (heuristic-state-sandwich (states-to-matrix 1 dimension states) 0 xo nil)
+; (heuristic-state-sandwich (states-to-matrix 1 dimension states-vertical) 0 xo t)
+; vertical bool: t za nalazanje potenijalnih vertikalnih sendvica
+; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
+
+(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool)
+	(if (null row-matrix) nil 
+		(cons 
+			(altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool)
+	 		(heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool)
+	 	)
+ 	)
+)
+
+(defun altern-state-horizontal (coded-row rownum xo counter missing)
+  (cond
+   ((null coded-row) missing)
+   ((and xo (< rownum 2)) missing)
+   ((and (not xo) (>= rownum (- dimension 2))) missing)
+   ((equalp counter 5) 0)
+   ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) 
+	(if (> missing (- 4 counter)) 
+   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) (- 4 counter))
+   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) missing)
+   	)
+   	)
+   (t (altern-state-horizontal (cdr coded-row) rownum xo 0 missing))
+  )
+)
+
+; (heuristic-state-horizontal (states-to-matrix 1 dimension states) 0 xo)
+; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku vrstu matrice (0... dimension-1)
+
+(defun heuristic-state-horizontal (row-matrix rownum xo )
+	(if (null row-matrix) nil 
+		(cons 
+			(altern-state-horizontal (car row-matrix) rownum xo 0 5)
+	 		(heuristic-state-horizontal (cdr row-matrix) (+ rownum 1) xo)
+	 	)
+ 	)
+)
+
 (defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
   (cond
-   ((null coded-column) nil)
-   ((and (not xo) (> rownum (- dimension 2))) nil)
-   ((equalp counter 5) t)
-   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (and xo (> rownum 2))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
+   ((null coded-column) counter)
+   ((and (not xo) (> rownum (- dimension 2))) counter)
+   ((equalp counter 5) counter)
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (or (and xo (> rownum 2)) (and (not xo) (<= rownum (- dimension 2))))) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter)))
    ((listp (car coded-column)) (check-winner-state-vertical (cdr coded-column) (1+ rownum) xo 0))
    (t (check-winner-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0))
   )
 )
 
+; (heuristic-state-vertical (states-to-matrix 1 dimension states-vertical) 0 xo)
+; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku kolonu matrice (0... dimension-1)
+
+(defun heuristic-state-vertical (column-matrix columnum xo)
+	(if (null column-matrix) nil 
+		(cons 
+			(altern-state-vertical (car column-matrix) columnum xo 0 5)
+	 		(heuristic-state-vertical (cdr column-matrix) 0 xo)
+	 	)
+ 	)
+)
+
+(defun altern-state-vertical (coded-column rownum xo counter missing) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
+  (cond
+   ((null coded-column) missing)
+   ((and (not xo) (>= rownum (- dimension 2))) missing)
+   ((equalp counter 5) 0)
+   ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (or (and xo (>= rownum 2)) (and (not xo) (< rownum (- dimension 2)))))
+	(if (> missing (- 4 counter)) 
+		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) (- 4 counter))
+		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) missing)
+   	)
+   )
+   ((listp (car coded-column)) (altern-state-vertical (cdr coded-column) (1+ rownum) xo 0 missing))
+   (t (altern-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0 missing))
+  )
+)
+
 (defun check-winner-state-diagonal (lvl encoded-list xo res lr)
-
     (cond
-      ((null encoded-list) (cond ((>= (longest-sublist res 0) 5)  T)
-                                 (t NIL)))
+      ((null encoded-list) res)
       (t (check-winner-state-diagonal (+ lvl 1) (cdr encoded-list) xo (check-row-for-diagonal lvl
-                                                                                        (cond
-                                                                                          ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 2))))NIL)
-                                                                                          (t (car encoded-list))) xo res lr) lr))
+          (cond
+            ((or(and (equalp xo 'x) (<= lvl 2)) (and (equalp xo 'o) (>= lvl (- dimension 1)))) nil)
+            (t (car encoded-list))) xo res lr) lr))
       )
-    )
+  )
 
+;;(heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal 'x  nil 1) nil)
+(defun heuristic-value-diagonal (diagonals result)
+  (cond
+    ((null diagonals) result)
+    (t (cons
+         (append result (- 5 (length (car diagonals))))
+         (heuristic-value-diagonal (cdr diagonals) result)))
+       )
+    )
 
 (defun longest-sublist (all longest)
   (cond
@@ -341,14 +499,14 @@
 (defun max-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (list (random 150)))
+    ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) xo) (heuristic-value (car state-par) (cadr state-par) (not xo))))
     (t (let
            ((quit-flag NIL))
          (progn
            (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
                  do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< (car alpha) (car new-alpha)) (setf alpha (cons (car new-alpha)  x)))
-                    (when (>= (car alpha) (car beta)) (setq quit-flag T))
+                      (if (< alpha new-alpha) (setf alpha new-alpha)))
+                    (when (>= alpha beta) (setq quit-flag T))
                  ))
            (cond
              ((null quit-flag) alpha)
@@ -356,37 +514,58 @@
              )))
     )
     )
-  )
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
     ;; ovde na mesto randoma ide heuristic-value od state
-    ((zerop depth) (list (random 150)))
+    ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
       (progn
       (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
-                 (if (> (car beta) (car new-beta)) (setf beta (cons (car new-beta)  x)))
-               (when (>= (car alpha)(car beta)) (setq quit-flag T))
+                 (if (> beta new-beta) (setf beta new-beta)))
+               (when (>= alpha beta) (setq quit-flag T))
             ))
       (cond
         ((null quit-flag) beta)
         (t alpha)
         )))
     )
+  )
+
+(defun alpha-beta (state-par alpha beta depth xo)
+  (cond
+    ;; ovde na mesto randoma ide heuristic-value od state
+    ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
+    (t (let
+           ((quit-flag NIL) (best-move NIL))
+         (progn
+           (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))
+                    (when (>= alpha beta) (setq quit-flag T))
+                 ))
+         (cond
+           ((null quit-flag) best-move)
+           (t beta)
+           )))
     )
   )
 
-(defun heuristic-value (state)
-(random 100)
-)
 
 (defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
-  (append
-   (make-all-states states-h states-v (generate-states horizontal-matrix 1 xo) xo nil)
-   (make-all-states states-h states-v (generate-states vertical-matrix 1 xo) xo t)
-  )
+  	(let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
+
+  		(cond
+  			((null vertical) (make-all-states states-h states-v horizontal xo nil))
+  			((null horizontal) (make-all-states states-h states-v vertical xo t))
+  			(t (append
+   				(make-all-states states-h states-v horizontal xo nil)
+   				(make-all-states states-h states-v vertical xo t)
+			))
+  		)
+  	)
 )
 
 (defun make-all-states (states-h states-v all-states xo invert)
@@ -400,7 +579,7 @@
 (defun make-states (states-h states-v x y possible xo invert)
   (cond
    ((null possible) nil)
-   ((atom (car possible)) (make-state states-h states-v x y (car possible) (cadr possible) xo invert))
+   ((atom (car possible)) (list (make-state states-h states-v x y (car possible) (cadr possible) xo invert)))
    (t (cons (make-state states-h states-v x y (caar possible) (cadar possible) xo invert) (make-states states-h states-v x y (cdr possible) xo invert)))
   )
 )
@@ -464,12 +643,16 @@
 ;      ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
       ((atom value) (cond
                       ((zerop value) (generate-moves-for-row lvl lst 0 xo (cdr row) res ))
-                      ((listp lst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl lst value NIL))))
+                      ((listp lst) (cond
+                                     ((and (not(null seclst)) (listp seclst)) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T T) (append-moves-for-row lvl lst value NIL T))))
+                       (t (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl lst value NIL T))))))
                       ((zerop lst)(cond
-                                    ((and (not(null seclst)) (listp seclst))(generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T))))
+                                    ((and (not(null seclst)) (listp seclst))(generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl seclst 0 T T))))
                                     (t (generate-moves-for-row lvl lst value xo (cdr row) res))))
                       ))
-      ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T))))
+      ;; ako je value lista, a pethodi mu slobodno mesto
+      ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T T))))
+      ((numberp seclst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
@@ -486,9 +669,10 @@
     )
 )
 
-(defun append-moves-for-row (lvl el size prev)
+(defun append-moves-for-row (lvl el size prev forward)
     (list(cons (list lvl (car el)) (list (cond
-                                        ((zerop size) (list lvl (+ (car el) 2)))
+                                           ((zerop size) (cond ((not(null forward))(list lvl (+ (car el) 2)))
+                                                               (t (list lvl (- (car el) 2)))))
                                         (t (loop for x from 1 to size collect (list lvl (cond
                                                                                           ((null prev)(+ (car el) x))
                                                                                           (t (- (car el) x))))))))))
@@ -564,10 +748,6 @@
    ((zerop dim) nil)
    (t (append (initial-column-extend (- dim 1)) (List (list dim (- dimension 1)) (list dim dimension))))
   )
-)
-
-(defun show-initial-matrix (dim)
-  (print-matrix(states-to-matrix 1 dim  (initial-states dim)))
 )
 
 (defun print-matrix (mat indices)
