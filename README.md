@@ -70,8 +70,11 @@ Funkcija za procenu heurističke vrednosti stanja sama po sebi zahteva efikasno 
 za ulazne argumente prihvata horizontale i vertikalne nekodirane liste stanja kao i igrača koji je na potezu, a kao izlaz šalju brojnu vrednost formiranu kombinovanjem različitih faktora. U ove faktore ubrajaju se broj vertikalno, horizontalno i dijagonalno poređanih figura, kao i broj potencijalnih sendvič scenarija. Ključne pomoćne funkcije koje se koriste za realizovanje heuristic-value funkcije su:
 
 `heuristic-state-horizontal (row-matrix rownum xo)`
+
 `heuristic-state-vertical (column-matrix columnum xo)`
+
 `heuristic-value-diagonal (diagonals result)`
+
 `heuristic-state-sandwich (row-matrix rownum xo vertical-bool)`
 
 Prve tri navedene funkcije kao povratne vrednosti prosleđuju liste čiji elementi predstavljaju broj figura neophodnih da bi se obrazovao niz od pet figura. Njihova maltene identična struktura povratnih vrednosti omogućava nam korišćenje ključne podfunkcije za konverziju takvih listi u brojne heurističke vrednosti bez ikakvog prilagođavanja. Navedena funkcija za konverziju, 

@@ -76,7 +76,7 @@
       (setq states-vertical (cadr new-states))
       (if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
           (progn 
-            (show-output horizontal-matrix) 
+            (show-output (states-to-matrix 1 dimension states)) 
             (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)
           )
           (make-move-ai (not xo) (not artifficial))
@@ -502,7 +502,6 @@
 
 (defun max-value (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) xo) (heuristic-value (car state-par) (cadr state-par) (not xo))))
     (t (let
            ((quit-flag NIL))
@@ -521,7 +520,6 @@
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
@@ -540,29 +538,24 @@
 
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
     (t (let
-           ((quit-flag NIL) (best-move NIL))
+           ((quit-flag NIL) (best-move NIL) (is-terminal NIL) )
          (progn
            (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
-<<<<<<< HEAD
-                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))
-=======
                  do (cond
                       ((not (null (evaluate-winner-ai (states-to-matrix 1 dimension (car x)) (states-to-matrix 1 dimension (cadr x)) xo))) (progn (setf is-terminal t) (setf best-move x) (setf quit-flag T)))
                     (t (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
                       (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))))
->>>>>>> 8a75cecad9923b578151f1ad398dcb37a7c21579
                     (when (>= alpha beta) (setq quit-flag T))
                  )
          (cond
            ((null quit-flag) best-move)
+           ((not (null is-terminal)) best-move)
            (t beta)
            ))))
     )
-  )
+)
 
 
 (defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
@@ -663,15 +656,12 @@
                       ))
       ;; ako je value lista, a pethodi mu slobodno mesto
       ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T T))))
-<<<<<<< HEAD
-      ((numberp seclst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
-=======
       ((and (numberp seclst)(not (zerop seclst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
->>>>>>> 8a75cecad9923b578151f1ad398dcb37a7c21579
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
 )
+
 
 ;pomo?na funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igra?a evaluiramo), izlaz - ako je element koordinata igra?a koji nas interesuje onda vra?amo tu koordinatu, ako je od protivnika - vra?amo nulu, ako je broj slobodnih mesta - vra?amo ga takvog kakav je
 (defun encode-element (el xo)
