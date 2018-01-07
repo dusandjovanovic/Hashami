@@ -55,67 +55,71 @@
      ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move xo)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
      (t (if (validate-users-move current move horizontal vertical xo)
           (progn
-	          (change-state (car current) (cadr current) (car move) (cadr move) xo)
-	          (let*
-		          ((horizontal-coded (states-to-matrix 1 dimension states))
-		           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-		           (if (evaluate-winner horizontal-coded vertical-coded move xo)
-			            (make-move (not xo)))
-	          )
-	      )
+            (change-state (car current) (cadr current) (car move) (cadr move) xo)
+            (let*
+              ((horizontal-coded (states-to-matrix 1 dimension states))
+               (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+               (if (evaluate-winner horizontal-coded vertical-coded move xo)
+                  (make-move (not xo)))
+            )
+        )
 
-	      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo))
+        (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move xo))
 )))))
 
 (defun make-move-ai (xo artifficial)
   (if artifficial
-	(let*
-		((new-states (alpha-beta  (list states states-vertical) -200 200 4 xo)))
-		(progn
-			(setq states (car new-states))
+  (let*
+    ((new-states (alpha-beta  (list states states-vertical) -500 500 4 xo)))
+    (progn
+      (setq states (car new-states))
       (setq states-vertical (cadr new-states))
-			(if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
+      (if (evaluate-winner-ai (states-to-matrix 1 dimension states) (states-to-matrix 1 dimension states-vertical) xo)
+          (progn 
+            (show-output (states-to-matrix 1 dimension states)) 
+            (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)
+          )
           (make-move-ai (not xo) (not artifficial))
       )
-		)
-	)
+   )
+  )
 
     (progn
-        (show-output (states-to-matrix 1 dimension states))
-	(format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
-	  (let* ((input (read))
-	         (current (form-move (car input)))
-	         (move (form-move (cadr input)))
-	         (horizontal (states-to-matrix 1 dimension states))
-	         (vertical (states-to-matrix 1 dimension states-vertical))
-	         )
-		    (cond
-		     ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
-		     ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move-ai xo artifficial)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
-		     (t (if (validate-users-move current move horizontal vertical xo)
-		          (progn
-			          (change-state (car current) (cadr current) (car move) (cadr move) xo)
-			          (let*
-				          ((horizontal-coded (states-to-matrix 1 dimension states))
-				           (vertical-coded (states-to-matrix 1 dimension states-vertical)))
-				           (if (evaluate-winner horizontal-coded vertical-coded move xo)
-					            (make-move-ai (not xo) (not artifficial)))
-			          )
-			      )
+    (show-output (states-to-matrix 1 dimension states))
+    (format t "~%~%~A: unesite potez oblika ((x y) (n m)): " (if xo #\x #\o))
+    (let* ((input (read))
+           (current (form-move (car input)))
+           (move (form-move (cadr input)))
+           (horizontal (states-to-matrix 1 dimension states))
+           (vertical (states-to-matrix 1 dimension states-vertical))
+           )
+        (cond
+         ((string-equal (caar input) "exit") #+sbcl (sb-ext:quit))
+         ((or (null current) (null move) (> (car current) dimension) (> (cadr current) dimension) (> (car move) dimension) (> (cadr move) dimension)) (format t "~%~%Nepravilan format ili granice polja..~%") (make-move-ai xo artifficial)) ; nepravilno formatiran unos poteza rezultuje ponovnim unosom istog poteza
+         (t (if (validate-users-move current move horizontal vertical xo)
+              (progn
+                (change-state (car current) (cadr current) (car move) (cadr move) xo)
+                (let*
+                  ((horizontal-coded (states-to-matrix 1 dimension states))
+                   (vertical-coded (states-to-matrix 1 dimension states-vertical)))
+                   (if (evaluate-winner horizontal-coded vertical-coded move xo)
+                      (make-move-ai (not xo) (not artifficial)))
+                )
+            )
 
-			      (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move-ai xo artifficial))))))
-	)
-	)
+            (progn (format t "~%~%nedozvoljen potez, pokusajte ponovo..~%") (make-move-ai xo artifficial))))))
+  )
+  )
 )
 
 (defun evaluate-winner (horizontal-matrix vertical-matrix move xo)
-	(cond
+  (cond
         ((or (and xo (< (length (cadr states)) 4)) 
-        	(and (not xo) (< (length (car states)) 4)) 
-        	(>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
-        	(>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
-        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
-        	(>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
+          (and (not xo) (< (length (car states)) 4)) 
+          (>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
+          (>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
+          (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
+          (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
         )
         (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
 
@@ -131,21 +135,21 @@
           (equalp (apply 'min (heuristic-state-vertical vertical-matrix 0 xo )) 0)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
+         )
+        t
         )
-        (progn (show-output horizontal-matrix) (format t "~%~%Pobednik je ~A ~%~%" (if xo #\x #\o)) #+sbcl (sb-ext:quit)))
-
-        (t (progn (show-output horizontal-matrix) t))
+        (t nil)
     )
 )
 
 (defun validate-users-move (current move horizontal vertical xo)
-	(cond
-		((or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
+  (cond
+    ((or (and (not (equal (cadr current) (cadr move))) (validate-state current move (generate-states horizontal 1 xo)))
             (and (not (equal (car current) (car move))) (validate-state (list (cadr current) (car current)) (list (cadr move) (car move)) (generate-states vertical 1 xo))))
-		 t
+     t
         )
         (t nil)
-	)
+  )
 )
 
 (defun form-move (move)
@@ -268,20 +272,20 @@
    ((and xo (not vertical-bool) (< rownum 2)) counter)
    ((and (not xo) (>= rownum (- dimension 2))) counter)
    ((and 
-   	(listp (car coded-row)) 
-   	(equalp (cadar coded-row) (if xo 'x 'o)) 
-   	(listp (cadr coded-row))
-   	(equalp (cadadr coded-row) (if xo 'o 'x))
-   	)
-   		(if vertical-bool 
-   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool)
-			(altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool)
-   		)
+    (listp (car coded-row)) 
+    (equalp (cadar coded-row) (if xo 'x 'o)) 
+    (listp (cadr coded-row))
+    (equalp (cadadr coded-row) (if xo 'o 'x))
+    )
+      (if vertical-bool 
+        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool)
+      (altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool)
+      )
    )
    (t (if vertical-bool 
-   			(altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool)
-			(altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool)
-   	  )
+        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool)
+      (altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool)
+      )
    )
   )
 )
@@ -335,12 +339,12 @@
 ; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
 
 (defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool)
-	(if (null row-matrix) nil 
-		(cons 
-			(altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool)
-	 		(heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool)
-	 	)
- 	)
+  (if (null row-matrix) nil 
+    (cons 
+      (altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool)
+      (heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool)
+    )
+  )
 )
 
 (defun altern-state-horizontal (coded-row rownum xo counter missing)
@@ -350,11 +354,11 @@
    ((and (not xo) (>= rownum (- dimension 2))) missing)
    ((equalp counter 5) 0)
    ((and (listp (car coded-row)) (equalp (cadar coded-row) (if xo 'x 'o))) 
-	(if (> missing (- 4 counter)) 
-   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) (- 4 counter))
-   		(altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) missing)
-   	)
-   	)
+  (if (> missing (- 4 counter)) 
+      (altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) (- 4 counter))
+      (altern-state-horizontal (cdr coded-row) rownum xo (1+ counter) missing)
+    )
+    )
    (t (altern-state-horizontal (cdr coded-row) rownum xo 0 missing))
   )
 )
@@ -363,12 +367,12 @@
 ; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku vrstu matrice (0... dimension-1)
 
 (defun heuristic-state-horizontal (row-matrix rownum xo )
-	(if (null row-matrix) nil 
-		(cons 
-			(altern-state-horizontal (car row-matrix) rownum xo 0 5)
-	 		(heuristic-state-horizontal (cdr row-matrix) (+ rownum 1) xo)
-	 	)
- 	)
+  (if (null row-matrix) nil 
+    (cons 
+      (altern-state-horizontal (car row-matrix) rownum xo 0 5)
+      (heuristic-state-horizontal (cdr row-matrix) (+ rownum 1) xo)
+    )
+  )
 )
 
 (defun check-winner-state-vertical (coded-column rownum xo counter) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
@@ -386,12 +390,12 @@
 ; povratna vrednost: lista, svaki elemenat predstavlja broj figura koje fale do povezivanja 5 uzastopnih; za svaku kolonu matrice (0... dimension-1)
 
 (defun heuristic-state-vertical (column-matrix columnum xo)
-	(if (null column-matrix) nil 
-		(cons 
-			(altern-state-vertical (car column-matrix) columnum xo 0 5)
-	 		(heuristic-state-vertical (cdr column-matrix) 0 xo)
-	 	)
- 	)
+  (if (null column-matrix) nil 
+    (cons 
+      (altern-state-vertical (car column-matrix) columnum xo 0 5)
+      (heuristic-state-vertical (cdr column-matrix) 0 xo)
+    )
+  )
 )
 
 (defun altern-state-vertical (coded-column rownum xo counter missing) ; rownum za broj vrste i uvek se prosledjuje 1 i inkrementira se kroz funkciju
@@ -400,10 +404,10 @@
    ((and (not xo) (>= rownum (- dimension 2))) missing)
    ((equalp counter 5) 0)
    ((and (listp (car coded-column)) (equalp (cadar coded-column) (if xo 'x 'o)) (or (and xo (>= rownum 2)) (and (not xo) (< rownum (- dimension 2)))))
-	(if (> missing (- 4 counter)) 
-		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) (- 4 counter))
-		(altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) missing)
-   	)
+  (if (> missing (- 4 counter)) 
+    (altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) (- 4 counter))
+    (altern-state-vertical (cdr coded-column) (1+ rownum) xo (1+ counter) missing)
+    )
    )
    ((listp (car coded-column)) (altern-state-vertical (cdr coded-column) (1+ rownum) xo 0 missing))
    (t (altern-state-vertical (cdr coded-column) (+ rownum (car coded-column)) xo 0 missing))
@@ -498,7 +502,6 @@
 
 (defun max-value (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) xo) (heuristic-value (car state-par) (cadr state-par) (not xo))))
     (t (let
            ((quit-flag NIL))
@@ -507,17 +510,16 @@
                  do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
                       (if (< alpha new-alpha) (setf alpha new-alpha)))
                     (when (>= alpha beta) (setq quit-flag T))
-                 ))
+                 )
            (cond
              ((null quit-flag) alpha)
              (t beta)
-             )))
+             ))))
     )
     )
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
@@ -526,46 +528,48 @@
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
                  (if (> beta new-beta) (setf beta new-beta)))
                (when (>= alpha beta) (setq quit-flag T))
-            ))
+            )
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        )))
+        ))))
     )
   )
 
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
-    ;; ovde na mesto randoma ide heuristic-value od state
     ((zerop depth) (heuristic-value (car state-par) (cadr state-par) xo))
     (t (let
-           ((quit-flag NIL) (best-move NIL))
+           ((quit-flag NIL) (best-move NIL) (is-terminal NIL) )
          (progn
            (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
-                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))
+                 do (cond
+                      ((not (null (evaluate-winner-ai (states-to-matrix 1 dimension (car x)) (states-to-matrix 1 dimension (cadr x)) xo))) (progn (setf is-terminal t) (setf best-move x) (setf quit-flag T)))
+                    (t (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                      (if (< alpha new-alpha) (progn (setf alpha  new-alpha) (setf best-move x))))))
                     (when (>= alpha beta) (setq quit-flag T))
-                 ))
+                 )
          (cond
            ((null quit-flag) best-move)
+           ((not (null is-terminal)) best-move)
            (t beta)
-           )))
+           ))))
     )
-  )
+)
 
 
 (defun merge-all-states (horizontal-matrix vertical-matrix states-h states-v xo)
-  	(let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
+    (let* ((horizontal (generate-states horizontal-matrix 1 xo)) (vertical (generate-states vertical-matrix 1 xo)))
 
-  		(cond
-  			((null vertical) (make-all-states states-h states-v horizontal xo nil))
-  			((null horizontal) (make-all-states states-h states-v vertical xo t))
-  			(t (append
-   				(make-all-states states-h states-v horizontal xo nil)
-   				(make-all-states states-h states-v vertical xo t)
-			))
-  		)
-  	)
+      (cond
+        ((null vertical) (make-all-states states-h states-v horizontal xo nil))
+        ((null horizontal) (make-all-states states-h states-v vertical xo t))
+        (t (append
+          (make-all-states states-h states-v horizontal xo nil)
+          (make-all-states states-h states-v vertical xo t)
+      ))
+      )
+    )
 )
 
 (defun make-all-states (states-h states-v all-states xo invert)
@@ -652,11 +656,12 @@
                       ))
       ;; ako je value lista, a pethodi mu slobodno mesto
       ((and(atom lst) (not (zerop lst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value lst T T))))
-      ((numberp seclst) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
+      ((and (numberp seclst)(not (zerop seclst))) (generate-moves-for-row lvl lst value xo (cdr row) (append res (append-moves-for-row lvl value 0 T nil))))
        (t (generate-moves-for-row lvl lst value xo (cdr row) res))
        )
     )
 )
+
 
 ;pomo?na funkcija za generate-moves for row, ulazni parametri - el (element koji ispitujemo), xo (kog igra?a evaluiramo), izlaz - ako je element koordinata igra?a koji nas interesuje onda vra?amo tu koordinatu, ako je od protivnika - vra?amo nulu, ako je broj slobodnih mesta - vra?amo ga takvog kakav je
 (defun encode-element (el xo)
