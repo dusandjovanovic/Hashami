@@ -318,11 +318,11 @@
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
     (+
-       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 300 0)
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 250 0)
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil nil) 0))
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t nil) 0))
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 400 0)
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 400 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 250 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 250 0)
        (cond
           ((<= opponent-length 5) 200)
           ((<= opponent-length 8) 180)
