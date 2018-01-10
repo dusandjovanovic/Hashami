@@ -116,7 +116,6 @@
   (cond
         ((or (and xo (< (length (cadr states)) 4)) 
           (and (not xo) (< (length (car states)) 4)) 
-          (>= (check-winner-state-horizontal (nth (1- (car move)) horizontal-matrix) (car move) xo 0) 5)
           (>= (check-winner-state-vertical (nth (1- (cadr move)) vertical-matrix) (cadr move) xo 0) 5)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
@@ -131,7 +130,6 @@
   (cond
         ((or (and xo (< (length (cadr states)) 4)) 
           (and (not xo) (< (length (car states)) 4)) 
-          (equalp (apply 'min (heuristic-state-horizontal horizontal-matrix 0 xo )) 0)
           (equalp (apply 'min (heuristic-state-vertical vertical-matrix 0 xo )) 0)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil -1) 0) 5)
           (>= (longest-sublist (check-winner-state-diagonal 1 horizontal-matrix (if xo 'x 'o) nil 1) 0) 5)
@@ -266,25 +264,33 @@
   )
 )
 
-(defun altern-state-sandwich (coded-row rownum xo counter vertical-bool)
+(defun altern-state-sandwich (coded-row rownum xo counter vertical-bool prev)
   (cond
    ((null coded-row) counter)
    ((and xo (not vertical-bool) (< rownum 2)) counter)
    ((and (not xo) (>= rownum (- dimension 2))) counter)
-   ((and 
-    (listp (car coded-row)) 
-    (equalp (cadar coded-row) (if xo 'x 'o)) 
-    (listp (cadr coded-row))
-    (equalp (cadadr coded-row) (if xo 'o 'x))
+   ((or
+      (and 
+        (listp (car coded-row)) 
+        (equalp (cadar coded-row) (if xo 'x 'o)) 
+        (listp (cadr coded-row))
+        (equalp (cadadr coded-row) (if xo 'o 'x))
+      )
+      (and
+        (listp (car coded-row)) 
+        (equalp (cadar coded-row) (if xo 'x 'o))
+        (listp prev)
+        (equalp prev (if xo 'o 'x)) 
+      )
     )
       (if vertical-bool 
-        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool)
-      (altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool)
+        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo (1+ counter) vertical-bool (car coded-row))
+        (altern-state-sandwich (cdr coded-row) rownum xo (1+ counter) vertical-bool (car coded-row))
       )
    )
    (t (if vertical-bool 
-        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool)
-      (altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool)
+        (altern-state-sandwich (cdr coded-row) (1+ rownum) xo counter vertical-bool (car coded-row))
+        (altern-state-sandwich (cdr coded-row) rownum xo counter vertical-bool (car coded-row))
       )
    )
   )
@@ -311,12 +317,12 @@
       (coded-vertical (states-to-matrix 1 dimension states-vert))
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
-    (+ (list-to-heuristic (heuristic-state-horizontal coded-horizontal 0 xo ) 0 200 0)
-       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 200 0)
-       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil) 0))
-       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t) 0))
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 200 0)
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 200 0)
+    (+
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 300 0)
+       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil nil) 0))
+       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t nil) 0))
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 400 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 400 0)
        (cond
           ((<= opponent-length 5) 200)
           ((<= opponent-length 8) 180)
@@ -338,11 +344,11 @@
 ; vertical bool: t za nalazanje potenijalnih vertikalnih sendvica
 ; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
 
-(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool)
+(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool prev)
   (if (null row-matrix) nil 
     (cons 
-      (altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool)
-      (heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool)
+      (altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool prev)
+      (heuristic-state-sandwich (cdr row-matrix) (+ rownum 1) xo vertical-bool (car row-matrix))
     )
   )
 )
