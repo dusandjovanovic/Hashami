@@ -70,7 +70,7 @@
 (defun make-move-ai (xo artifficial)
   (if artifficial
   (let*
-    ((new-states (alpha-beta  (list states states-vertical) -500 500 4 xo)))
+    ((new-states (alpha-beta  (list states states-vertical) -5000 5000 4 xo)))
     (progn
       (setq states (car new-states))
       (setq states-vertical (cadr new-states))
