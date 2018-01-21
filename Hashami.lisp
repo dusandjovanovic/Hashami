@@ -299,8 +299,8 @@
 (defun list-to-heuristic (list level multiplier result)
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
-    ((equalp 500 (* multiplier (count level list))) 5000)
-    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 3) result)))
+    ((equalp 1000 (* multiplier (count level list))) 5000)
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 4) result)))
     )
   )
 
@@ -319,11 +319,12 @@
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
     (+
-       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 250 0)
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil nil) 0))
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t nil) 0))
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 500 0)
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 500 0)
+
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 1000 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 1000 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 1000 0)
        (cond
           ((<= opponent-length 4) 5000)
           ((<= opponent-length 5) 250)
