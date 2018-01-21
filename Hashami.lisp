@@ -70,7 +70,7 @@
 (defun make-move-ai (xo artifficial)
   (if artifficial
   (let*
-    ((new-states (alpha-beta  (list states states-vertical) -500 500 4 xo)))
+    ((new-states (alpha-beta  (list states states-vertical) -5000 5000 4 xo)))
     (progn
       (setq states (car new-states))
       (setq states-vertical (cadr new-states))
@@ -299,8 +299,8 @@
 (defun list-to-heuristic (list level multiplier result)
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
-    ((equalp 500 (* multiplier (count level list))) 5000)
-    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 2) result)))
+    ((equalp 1000 (* multiplier (count level list))) 5000)
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 4) result)))
     )
   )
 
@@ -319,11 +319,12 @@
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
     (+
-       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 250 0)
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil nil) 0))
        (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t nil) 0))
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 500 0)
-       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 500 0)
+
+       (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 1000 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 1000 0)
+       (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 1000 0)
        (cond
           ((<= opponent-length 4) 5000)
           ((<= opponent-length 5) 250)
@@ -346,7 +347,7 @@
 ; vertical bool: t za nalazanje potenijalnih vertikalnih sendvica
 ; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
 
-(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool prev)
+  (defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool prev)
   (if (null row-matrix) nil
     (cons
       (altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool prev)
