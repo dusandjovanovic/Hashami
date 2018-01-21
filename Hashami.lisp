@@ -300,7 +300,7 @@
   (cond
     ((>= level 4) (+ result (* 0.2 (count 2 list))))
     ((equalp 500 (* multiplier (count level list))) 5000)
-    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 2) result)))
+    (t (+ result (* multiplier (count level list)) (list-to-heuristic  list (+ level 1) (/ multiplier 3) result)))
     )
   )
 
@@ -346,7 +346,7 @@
 ; vertical bool: t za nalazanje potenijalnih vertikalnih sendvica
 ; povratna vrednost: lista, svaki elemenat evaulira stanje blizu sendvica, odnosno na koliko mesta ima susednih figura sa protivnickim; za svaku vrstu matrice (0... dimension-1)
 
-(defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool prev)
+  (defun heuristic-state-sandwich (row-matrix rownum xo vertical-bool prev)
   (if (null row-matrix) nil
     (cons
       (altern-state-sandwich (car row-matrix) rownum xo 0 vertical-bool prev)
