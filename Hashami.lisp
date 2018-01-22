@@ -173,7 +173,7 @@
 (defun check-sandwich (states-ptr states-vertical-ptr move xo)
   (let* (
          (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) xo move))
-         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo move))
+         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo (list (cadr move) (car move))))
         )
      (list
       (list
