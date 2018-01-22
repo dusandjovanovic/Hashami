@@ -525,7 +525,10 @@
              )))))))))
 
 (defun min-value (state-par alpha beta depth xo)
+(let* ((heuristic-min (heuristic-value (car state-par) (cadr state-par) xo)))
   (cond
+    ((<= heuristic-min 5000) -5000)
+  (t (cond
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
@@ -533,14 +536,11 @@
       (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
                  (if (> beta new-beta) (setf beta new-beta)))
-               (when (>= alpha beta) (setq quit-flag T))
-            )
+               (when (>= alpha beta) (setq quit-flag T)))
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        ))))
-    )
-  )
+        ))))))))) 
 
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
