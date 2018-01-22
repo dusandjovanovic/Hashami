@@ -509,31 +509,23 @@
 
 ;; implementiranje alfa beta algoritma
 
-(defun max-value (state-par alpha beta depth xo)
-  (cond
-    ((zerop depth) (let* (
-      (heuristic-max (heuristic-value (car state-par) (cadr state-par) xo))
-      (heuristic-min (heuristic-value (car state-par) (cadr state-par) (not xo))))
-      (cond
-        ((>= heuristic-max 5000) 5000)
-        ((>= heuristic-min 5000) -5000)
-        (t (- heuristic-max heuristic-min))
-      )
-    ))
-    (t (let
-           ((quit-flag NIL))
-         (progn
-           (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
-                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (setf alpha new-alpha)))
-                    (when (>= alpha beta) (setq quit-flag T))
-                 )
+ (defun max-value (state-par alpha beta depth xo)
+  (let* ((heuristic-max (heuristic-value (car state-par) (cadr state-par) xo)))
+    (cond
+      ((>= heuristic-max 5000) 5000)
+      (t  (cond
+            ((zerop depth) (- heuristic-max (heuristic-value (car state-par) (cadr state-par) (not xo))))
+            (t (let
+                   ((quit-flag NIL))
+                 (progn
+                   (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+                         do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                              (if (< alpha new-alpha) (setf alpha new-alpha)))
+                            (when (>= alpha beta) (setq quit-flag T)))
            (cond
              ((null quit-flag) alpha)
              (t beta)
-             ))))
-    )
-    )
+             )))))))))
 
 (defun min-value (state-par alpha beta depth xo)
   (cond
