@@ -527,7 +527,7 @@
 (defun min-value (state-par alpha beta depth xo)
 (let* ((heuristic-min (heuristic-value (car state-par) (cadr state-par) xo)))
   (cond
-    ((<= heuristic-min 5000) -5000)
+    ((>= heuristic-min 5000) -5000)
   (t (cond
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
