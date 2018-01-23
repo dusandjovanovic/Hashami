@@ -198,27 +198,27 @@
 )
 
 ; sledece dve funkcije vracaju elemente koji treba da budu obrisani (x y)
-(defun check-row-sandwich (states-ptr xo move)
+(defun check-row-sandwich (states-ptr xo)
   (let*
       (
        (player (if xo (car states-ptr) (cadr states-ptr)))
        (opponent (if xo (cadr states-ptr) (car states-ptr)))
       )
-    (to-remove player opponent move)
+    (to-remove player opponent)
   )
 )
 
-(defun check-column-sandwich (states-vertical-ptr xo move)
+(defun check-column-sandwich (states-vertical-ptr xo)
   (let*
       (
        (player (if xo (car states-vertical-ptr) (cadr states-vertical-ptr)))
        (opponent (if xo (cadr states-vertical-ptr) (car states-vertical-ptr)))
       )
-    (to-remove player opponent move)
+    (to-remove player opponent)
   )
 )
 
-(defun to-remove (player opponent move)
+(defun to-remove (player opponent)
   (let*
       (
        (left-bound (car player))
@@ -226,8 +226,7 @@
       )
     (cond
      ((null player) nil)
-     ((and (not (null right-bound)) (not (equalp move left-bound)) (not (equalp move right-bound))) (append nil (to-remove (cdr player) opponent move)))
-     (t (append (in-between left-bound right-bound (list (car left-bound) (1+ (cadr left-bound))) nil opponent) (to-remove (cdr player) opponent move)))
+     (t (append (in-between left-bound right-bound (list (car left-bound) (1+ (cadr left-bound))) nil opponent) (to-remove (cdr player) opponent)))
     )
   )
 )
@@ -468,15 +467,47 @@
 (defun check-row-for-diagonal (lvl row xo current lr)
   (cond
     ((null row) (remove-atoms (- lvl 1) current NIL))
-    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr) lr))
+    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr xo) lr))
      (t (check-row-for-diagonal lvl (cdr row) xo current lr))
      )
     )
 
+(defun check-if-not-addable-diagonal (element lr xo)
+  (let*
+      ((sum (+ (car element) (cadr element))))
+    (cond 
+      ((equalp lr -1) (cond
+                        ((equalp xo 'x) (cond
+                                          ((or (< sum 8) (> sum (- (* dimension 2) 4))) NIL )
+                                          (t T)
+                                          ))
+                        (t (cond
+                             ((or (< sum 6) (> sum (- (* dimension 2) 6))) NIL)
+                             (t T)
+                             ))
+                        )
+       )
+      (t (cond
+           ((equalp xo 'x) (cond
+                             ((or (and (>= (car element) 2 ) (<=  (car element) 6) (>= (- (cadr element) (car element)) (- dimension 6) ))
+                                  (and (>= (cadr element) 1) (<= (cadr element) 4) (>= (- (car element) (cadr element)) (- dimension 4)))) NIL)
+                             (t T)
+                             ))
+           (t (cond
+                ((or (and (>= (car element) 2) (<= (car element) 6) (>= (- (cadr element) (car element)) (- dimension 4)))
+                     (and (>= (cadr element) 1) (<= (cadr element) 4) (>= (- (car element) (cadr element)) (- dimension 6)))) NIL)
+                (t T)
+                )) ))
+      ))
+  )
 
-(defun check-if-element-diagonal (element current res lr)
-
+(defun check-if-element-diagonal (element current res lr xo)
   (cond
+    ((null  (check-if-not-addable-diagonal element lr xo))
+     (cond
+       ((null current) res)
+       (t current)))
+  (t (cond
     ((null current)
          (cond
            ((null res) (list element))
@@ -486,16 +517,11 @@
          (cond
            ((equalp value (check-if-appends element value lr)) (check-if-element-diagonal element (cdr current) (cond
                                                                                                                ((null res) (list (car current)))
-                                                                                                               (t(append res (list(car current))))) lr))
+                                                                                                               (t(append res (list(car current))))) lr xo))
            (t  (append res (list(check-if-appends element value lr)) (cdr current)) )
-           )
-         )
-       )
-    )
-  )
+           )))))))
 
 (defun check-if-appends (element element-or-atom lr)
-
   (let*
       ((value (car (last element-or-atom))))
     (cond
@@ -506,10 +532,7 @@
       ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
                                                                     ((equalp lr -1) T)
                                                                     (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
-      (t element-or-atom)
-      )
-    )
-  )
+      (t element-or-atom))))
 
 ;; implementiranje alfa beta algoritma
 
@@ -547,7 +570,7 @@
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        )))))))))
+        ))))))))) 
 
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
