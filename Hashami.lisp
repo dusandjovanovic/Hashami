@@ -172,8 +172,8 @@
 ; parametri su states/states-vertical vraca listu ((new states) (new states-vertical)) :: integrisano u generator stanja (make-all-states)
 (defun check-sandwich (states-ptr states-vertical-ptr move xo)
   (let* (
-         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) xo))
-         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo))
+         (to-delete-horizontal (check-row-sandwich (list (extract-row-column (car states-ptr) (car move)) (extract-row-column (cadr states-ptr) (car move))) xo move))
+         (to-delete-vertical (check-column-sandwich (list (extract-row-column (car states-vertical-ptr) (cadr move)) (extract-row-column (cadr states-vertical-ptr) (cadr move))) xo (list (cadr move) (car move))))
         )
      (list
       (list
@@ -319,21 +319,24 @@
       (opponent-length (if xo (length (cadr states-hor)) (length (car states-hor))))
      )
     (+
-       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-horizontal 0 xo nil nil) 0))
-       (* 5 (non-zero-inlist (heuristic-state-sandwich coded-vertical 0 xo t nil) 0))
-
        (list-to-heuristic (heuristic-state-vertical coded-vertical 0 xo ) 0 1000 0)
        (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil 1) nil)  0 1000 0)
        (list-to-heuristic (heuristic-value-diagonal (check-winner-state-diagonal 1 coded-horizontal (if xo 'x 'o) nil -1) nil) 0 1000 0)
        (cond
           ((<= opponent-length 4) 5000)
-          ((<= opponent-length 5) 250)
-          ((<= opponent-length 8) 220)
-          ((<= opponent-length 10) 200)
-          ((<= opponent-length 12) 180)
-          ((<= opponent-length 14) 140)
-          ((<= opponent-length 16) 100)
-          ((<= opponent-length 17) 80)
+          ((<= opponent-length 5) 400)
+          ((<= opponent-length 6) 350)
+          ((<= opponent-length 7) 300)
+          ((<= opponent-length 8) 280)
+          ((<= opponent-length 9) 260)
+          ((<= opponent-length 10) 240)
+          ((<= opponent-length 11) 220)
+          ((<= opponent-length 12) 200)
+          ((<= opponent-length 13) 180)
+          ((<= opponent-length 14) 160)
+          ((<= opponent-length 15) 140)
+          ((<= opponent-length 16) 120)
+          ((<= opponent-length 17) 100)
           ((<= opponent-length 18) 60)
           ((<= opponent-length 19) 40)
           (t 0)
@@ -464,15 +467,47 @@
 (defun check-row-for-diagonal (lvl row xo current lr)
   (cond
     ((null row) (remove-atoms (- lvl 1) current NIL))
-    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr) lr))
+    ((listp (encode-element (car row) xo)) (check-row-for-diagonal lvl (cdr row) xo (check-if-element-diagonal (list lvl (caar row)) current NIL lr xo) lr))
      (t (check-row-for-diagonal lvl (cdr row) xo current lr))
      )
     )
 
+(defun check-if-not-addable-diagonal (element lr xo)
+  (let*
+      ((sum (+ (car element) (cadr element))))
+    (cond 
+      ((equalp lr -1) (cond
+                        ((equalp xo 'x) (cond
+                                          ((or (< sum 8) (> sum (- (* dimension 2) 4))) NIL )
+                                          (t T)
+                                          ))
+                        (t (cond
+                             ((or (< sum 6) (> sum (- (* dimension 2) 6))) NIL)
+                             (t T)
+                             ))
+                        )
+       )
+      (t (cond
+           ((equalp xo 'x) (cond
+                             ((or (and (>= (car element) 2 ) (<=  (car element) 6) (>= (- (cadr element) (car element)) (- dimension 6) ))
+                                  (and (>= (cadr element) 1) (<= (cadr element) 4) (>= (- (car element) (cadr element)) (- dimension 4)))) NIL)
+                             (t T)
+                             ))
+           (t (cond
+                ((or (and (>= (car element) 2) (<= (car element) 6) (>= (- (cadr element) (car element)) (- dimension 4)))
+                     (and (>= (cadr element) 1) (<= (cadr element) 4) (>= (- (car element) (cadr element)) (- dimension 6)))) NIL)
+                (t T)
+                )) ))
+      ))
+  )
 
-(defun check-if-element-diagonal (element current res lr)
-
+(defun check-if-element-diagonal (element current res lr xo)
   (cond
+    ((null  (check-if-not-addable-diagonal element lr xo))
+     (cond
+       ((null current) res)
+       (t current)))
+  (t (cond
     ((null current)
          (cond
            ((null res) (list element))
@@ -482,16 +517,11 @@
          (cond
            ((equalp value (check-if-appends element value lr)) (check-if-element-diagonal element (cdr current) (cond
                                                                                                                ((null res) (list (car current)))
-                                                                                                               (t(append res (list(car current))))) lr))
+                                                                                                               (t(append res (list(car current))))) lr xo))
            (t  (append res (list(check-if-appends element value lr)) (cdr current)) )
-           )
-         )
-       )
-    )
-  )
+           )))))))
 
 (defun check-if-appends (element element-or-atom lr)
-
   (let*
       ((value (car (last element-or-atom))))
     (cond
@@ -502,41 +532,33 @@
       ((and (equalp (cadr element) (+ (cadr element-or-atom) lr)) (cond
                                                                     ((equalp lr -1) T)
                                                                     (t (equalp(car element) (+ (car element-or-atom) lr))))) (list element-or-atom element))
-      (t element-or-atom)
-      )
-    )
-  )
+      (t element-or-atom))))
 
 ;; implementiranje alfa beta algoritma
 
-(defun max-value (state-par alpha beta depth xo)
-  (cond
-    ((zerop depth) (let* (
-      (heuristic-max (heuristic-value (car state-par) (cadr state-par) xo))
-      (heuristic-min (heuristic-value (car state-par) (cadr state-par) (not xo))))
-      (cond
-        ((>= heuristic-max 5000) 5000)
-        ((>= heuristic-min 5000) -5000)
-        (t (- heuristic-max heuristic-min))
-      )
-    ))
-    (t (let
-           ((quit-flag NIL))
-         (progn
-           (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
-                 do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
-                      (if (< alpha new-alpha) (setf alpha new-alpha)))
-                    (when (>= alpha beta) (setq quit-flag T))
-                 )
+ (defun max-value (state-par alpha beta depth xo)
+  (let* ((heuristic-max (heuristic-value (car state-par) (cadr state-par) xo)))
+    (cond
+      ((>= heuristic-max 5000) 5000)
+      (t  (cond
+            ((zerop depth) (- heuristic-max (heuristic-value (car state-par) (cadr state-par) (not xo))))
+            (t (let
+                   ((quit-flag NIL))
+                 (progn
+                   (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
+                         do (let* ((new-alpha (min-value x alpha beta (- depth 1) (not xo))))
+                              (if (< alpha new-alpha) (setf alpha new-alpha)))
+                            (when (>= alpha beta) (setq quit-flag T)))
            (cond
              ((null quit-flag) alpha)
              (t beta)
-             ))))
-    )
-    )
+             )))))))))
 
 (defun min-value (state-par alpha beta depth xo)
+(let* ((heuristic-min (heuristic-value (car state-par) (cadr state-par) xo)))
   (cond
+    ((>= heuristic-min 5000) -5000)
+  (t (cond
     ((zerop depth) (- (heuristic-value (car state-par) (cadr state-par) (not xo)) (heuristic-value (car state-par) (cadr state-par) xo)))
     (t (let
         ((quit-flag NIL))
@@ -544,14 +566,11 @@
       (loop for x in (merge-all-states (states-to-matrix 1 dimension (car state-par)) (states-to-matrix 1 dimension (cadr state-par)) (car state-par) (cadr state-par) xo ) until quit-flag
             do (let* ((new-beta (max-value x alpha beta (- depth 1) (not xo))))
                  (if (> beta new-beta) (setf beta new-beta)))
-               (when (>= alpha beta) (setq quit-flag T))
-            )
+               (when (>= alpha beta) (setq quit-flag T)))
       (cond
         ((null quit-flag) beta)
         (t alpha)
-        ))))
-    )
-  )
+        ))))))))) 
 
 (defun alpha-beta (state-par alpha beta depth xo)
   (cond
